@@ -1,0 +1,54 @@
+##############################################
+# General
+
+## Print requirements
+conda list --export > requirements.txt
+
+## Create enviroment
+conda create --name bot
+
+## Initt conda
+conda init cmd.exe
+
+## Run enviroment
+conda activate bot
+
+## Desactive enviroment
+conda deactivate
+
+##############################################
+# SPACY
+# https://spacy.io/
+
+## Install
+#pip3 install spacy
+conda install -c conda-forge spacy
+python -m spacy download es_core_news_sm
+
+##############################################
+# BERT intent
+# https://www.searchenginejournal.com/automated-intent-classification-using-deep-learning-part-2/318691/#close
+
+## Install
+#conda install tensorflow-gpu==1.15.0 -y
+#conda install -c conda-forge tf-slim -y
+pip3 uninstall numpy
+pip3 install numpy==1.18.5
+pip install ludwig
+
+
+
+##############################################
+# BERT
+# https://medium.com/swlh/a-simple-guide-on-using-bert-for-text-classification-bbf041ac8d04
+
+## Install dependencies 
+pip3 install pandas
+conda install pytorch -c pytorch
+conda install -c  pytorch pandas tqdm
+conda install -c anaconda scikit-learn
+
+#conda install -c  pytorch pandas tqdm
+pip install pytorch-pretrained-bert
+
+

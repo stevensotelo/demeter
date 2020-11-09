@@ -1,0 +1,10 @@
+# Enviroment
+*/virtualm
+
+# Data
+/data
+
+# Python
+src/Python/__pycache__
+*.__pycache__
+*.pyc
