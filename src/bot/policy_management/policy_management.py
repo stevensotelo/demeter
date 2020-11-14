@@ -92,17 +92,11 @@ class PolicyManagement:
                         if(ws_data.shape[0] > 0):
                             ws_id = ws_data["ws_id"].unique()
                             ws = ','.join(ws_id)
-                            # Ask for the historical data
-                            climatology = self.historical_data.get_Climatology(ws)
-                            df = pd.merge(climatology, geographic, on='ws_id', how='inner')
-                            # Filter by measure
-                            measures = entities.loc[(entities["type"].str.isin(["b-measure"])), ]
+                            # Ask for the forecast data
+                            forecast = self.forecast.get_Climate(ws)
+                            df = pd.merge(forecast, geographic, on='ws_id', how='inner')
+                            answer.append(NER(Forecast.CLIMATE, df))
 
-############################################
-                            for m in measures.itertuples(index=True, name='Pandas') :
-                                df = df.loc[df["measure"].unique() ,]
-############################################                            
-                            answer.append(NER(Historical.CLIMATOLOGY, df))
         return answer
 
     # Method that search climatology
@@ -126,10 +120,17 @@ class PolicyManagement:
                         if(ws_data.shape[0] > 0):
                             ws_id = ws_data["ws_id"].unique()
                             ws = ','.join(ws_id)
-                            # Ask for the forecast data
-                            forecast = self.forecast.get_Climate(ws)
-                            df = pd.merge(forecast, geographic, on='ws_id', how='inner')
-                            answer.append(NER(Forecast.CLIMATE, df))
+                            # Ask for the historical data
+                            climatology = self.historical_data.get_Climatology(ws)
+                            df = pd.merge(climatology, geographic, on='ws_id', how='inner')
+                            # Filter by measure
+                            measures = entities.loc[(entities["type"].str.isin(["b-measure"])), ]
+
+############################################
+                            for m in measures.itertuples(index=True, name='Pandas') :
+                                df = df.loc[df["measure"].unique() ,]
+############################################                            
+                            answer.append(NER(Historical.CLIMATOLOGY, df))
         return answer
     
     # Method that search ws names and ids into geographic data
