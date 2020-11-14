@@ -25,9 +25,7 @@ class Catalog:
                     for w in m['weather_stations']:
                         df = df.append(pd.Series([s['country'], s['id'], s['name'], m['id'], m['name'], w['id'], w['name'], w['origin']]), ignore_index=True)
             df.columns = ["country_name", "state_id", "state_name", "municipality_id", "municipality_name", "ws_id", "ws_name", "ws_origin"]
-            return df
-        else:
-            return None
+        return df
     
     # Method that search all cultivars available in the aclimate platform
     # return: None if couldn't connect with the service, Otherwise a DataFrame with the data 
@@ -45,6 +43,4 @@ class Catalog:
                 for cu in cp['cultivars']:
                     df = df.append(pd.Series([cp['cp_id'], cp['cp_name'], cu['id'], cu['name'], cu['rainfed'], cu['national']]), ignore_index=True)
             df.columns = ["cp_id", "cp_name", "cu_id", "cu_name", "cu_rainfed", "cu_national"]
-            return df
-        else:
-            return None
+        return df

@@ -1,6 +1,8 @@
 import pandas as pd
 from nlu.enums import Geographic, Cultivars
 from policy_management.catalog import Catalog
+from policy_management.climate import Climate
+from policy_management.ner import NER
 
 class PolicyManagement:
 
@@ -8,50 +10,105 @@ class PolicyManagement:
         self.url_base = url        
         self.headers = {'Content-Type': 'application/json'} # 'application/json'
         self.catalog = Catalog(url, self.headers)
+        self.climate = Climate(url, self.headers)
 
     # Method that search geographic places
-    # (enum) type: Type of search
-    # (string) value: Value to search. By default it is None 
-    def geographic(self, type, value = None):
-        localities = []
-        data = self.catalog.get_Geographic()        
-        if(type == Geographic.STATE):            
-            # List all states
-            if(value == None):
-                localities = data.loc[:,"state_name"].unique()
-            # Filter municipalities by state
-            else:
-                localities = data.loc[data["state_name"] == value,"municipality_name"].unique()
-        elif(type == Geographic.MUNICIPALITY):            
-            # List all municipalities
-            if(value == None):
-                localities = data.loc[:,"municipality_name"].unique()
-            # Filter ws by municipalities
-            else:
-                localities = data.loc[places["municipality_name"] == value,"weather_stations"].unique()
-            
-        return localities
+    # (dataframe) entities: List of entities found in the message user
+    def geographic(self, entities):
+        answer = []
+        data = self.catalog.get_Geographic()   
+        # Entities weren't found
+        if (entities.shape[0] == 0):
+            answer.append(NER(Geographic.STATE, data.loc[:,"state_name"].unique()))
+        else:
+            e_type = entities.loc[(entities["type"].str.isin(["b-locality"])), ]
+            localities =  entities.loc[(entities["type"].str.isin(["b-locality"])), ]
+            # This section adds the list of localities  
+            for l in localities_s.itertuples(index=True, name='Pandas') :
+                e_data = data[(data["state_name"].str.lower().contains(getattr(l, "value"))), ]
+                # Check if the message has state name in order to send the municipalities
+                if(e_data.shape[0] > 0):
+                    answer.append(NER(Geographic.MUNICIPALITIES_STATE, e_data.loc[:,"municipality_name"].unique(), getattr(l, "value")))
+                else:
+                    e_data = data[(data["municipality_name"].str.lower().contains(getattr(l, "value"))), ]
+                    # Check if message has municipality name in order to send weather stations
+                    if(e_data.shape[0] > 0):
+                        answer.append(NER(Geographic.WS_MUNICIPALITY, e_data.loc[:,"ws_name"].unique(),getattr(l, "value")))
+                    else:
+                        e_data = data[(data["ws_name"].str.lower().contains(getattr(l, "value"))), ]
+                        # Check if message has weather station name in order to send the ws found
+                        if(e_data.shape[0] > 0):
+                            answer.append(NER(Geographic.WEATHER_STATION, e_data.loc[:,"ws_name"].unique(),getattr(l, "value")))
+        return answer
     
     # Method that search cultivars available
-    # (enum) type: Type of search. By deafult it is Cultivars.CROP
-    # (string) value: Value to search. By default it is None 
-    def cultivars(self, type = Cultivars.CROP, value = None):
-        cu = []
-        data = self.catalog.get_Agronomic()                
-        if(type == Cultivars.CROP):
-            # List all crops
-            if(value == None):                
-                cu = data.loc[:,"cp_name"].unique()
-            # Filter crops
-            else:
-                cu = data.loc[data["cp_name"] == value,"cu_name"].unique()
-        elif(type == Cultivars.CULTIVARS):            
-            # List all cultivars
-            if(value == None):                
-                cu = data.loc[:,["cp_name","cu_name"]]
-            # Filter ws by municipalities
-            else:
-                cu = data.loc[(data["cp_name"] == value | data["cu_name"] == value) ,"cu_name"].unique()
-            cu.drop_duplicates()
-        return cu
+    # (dataframe) entities: List of entities found in the message user
+    def cultivars(self, entities):
+        answer = []
+        data = self.catalog.get_Agronomic()
+        # Entities weren't found
+        if (entities.shape[0] == 0):
+            answer.append(NER(Cultivars.CROP_MULTIPLE, data.loc[:,"cp_name"].unique()))
+        # Entities were found
+        else:
+            e_type = entities.loc[(entities["type"].str.isin(["b-crop"]) & entities["type"].str.isin(["b-cultivar"])), ]
+            # Specific list of crops and cultivars
+            if(e_type.shape[0] > 0):
+                crops =  entities.loc[(entities["type"].str.isin(["b-crop"])), ]
+                # This section adds the list of cultivars for each crop required
+                if (crops.shape[0] > 0):
+                    for c in crops.itertuples(index=True, name='Pandas') :
+                        e_data = data[(data["cp_name"].str.lower() == getattr(c, "value")), ]
+                        answer.append(NER(Cultivars.CROP_CULTIVAR, e_data.loc[:,"cu_name"].unique(), getattr(c, "value")))
+                else:
+                    # This section searches the cultivars required
+                    cultivars =  entities.loc[(entities["type"].str.isin(["b-cultivar"])), ]
+                    if (cultivars.shape[0] > 0):
+                        for c in cultivars.itertuples(index=True, name='Pandas') :
+                            e_data = data[(data["cu_name"].str.lower().contains(getattr(c, "value"))), ]
+                            answer.append(NER(Cultivars.CULTIVARS_MULTIPLE, e_data.loc[:,"cu_name"].unique()))
+        return answer
+    
+    # Method that search climate forecast
+    # (dataframe) entities: List of entities found in the message user
+    def climate_forecast(self, entities):
+        answer = []
+        geographic = self.catalog.get_Geographic()
+        # Entities weren't found
+        if (entities.shape[0] == 0):
+            return answer
+        # Entities were found
+        else:
+            e_type = entities.loc[(entities["type"].str.isin(["b-locality"])), ]
+            # Try to search if locality was reconigzed
+            if(e_type.shape[0] > 0):
+                localities =  entities.loc[(entities["type"].str.isin(["b-locality"])), ]
+                # This section check if a locality was found
+                if (localities.shape[0] > 0):
+                    # This loop figure out all localtities through: states, municipalities and ws, which are into the message
+                    for l in localities.itertuples(index=True, name='Pandas') :
+                        ws_data = get_ws(getattr(l, "value"), geographic)
+                        # Check if the ws were found
+                        if(ws_data.shape[0] > 0):
+                            ws_id = ws_data["ws_id"].unique()
+                            ws = ','.join(ws_id)
+                            forecast = self.climate.get_ForecastClimate(ws)
+                            df = pd.merge(forecast, geographic, on='ws_id', how='inner')
+                            
+
+                    
+                    answer.append(NER(Cultivars.CROP_CULTIVAR, e_data.loc[:,"cu_name"].unique(), getattr(e, "value")))
+                else:
+                   
+                
+        return answer
+    
+    # Method that search ws names and ids into geographic data
+    # (string) name: Name of the weather station
+    # (dataframe) geographic: List of all geographic
+    def get_ws(name, geographic):        
+        # Search by weather station, muncipality and state names
+        ws_data = geographic[(geographic["ws_name"].str.lower().contains(name) | geographic["state_name"].str.lower().contains(name) |geographic["municipality_name"].str.lower().contains(name)), ["ws_id","ws_name"]]
+        return ws_data
+
 
