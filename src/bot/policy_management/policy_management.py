@@ -1,7 +1,8 @@
 import pandas as pd
-from nlu.enums import Geographic, Cultivars
+from nlu.enums import Geographic, Cultivars, Forecast
 from policy_management.catalog import Catalog
-from policy_management.climate import Climate
+from policy_management.forecast import ForecastData
+from policy_management.historical import HistoricalData
 from policy_management.ner import NER
 
 class PolicyManagement:
@@ -10,7 +11,8 @@ class PolicyManagement:
         self.url_base = url        
         self.headers = {'Content-Type': 'application/json'} # 'application/json'
         self.catalog = Catalog(url, self.headers)
-        self.climate = Climate(url, self.headers)
+        self.forecast_data = ForecastData(url, self.headers)
+        self.historical_data = HistoricalData(url, self.headers)
 
     # Method that search geographic places
     # (dataframe) entities: List of entities found in the message user
@@ -72,13 +74,11 @@ class PolicyManagement:
     # Method that search climate forecast
     # (dataframe) entities: List of entities found in the message user
     def climate_forecast(self, entities):
-        answer = []
-        geographic = self.catalog.get_Geographic()
-        # Entities weren't found
-        if (entities.shape[0] == 0):
-            return answer
+        answer = []        
         # Entities were found
-        else:
+        if (entities.shape[0] > 0):
+            # Get the localities
+            geographic = self.catalog.get_Geographic()
             e_type = entities.loc[(entities["type"].str.isin(["b-locality"])), ]
             # Try to search if locality was reconigzed
             if(e_type.shape[0] > 0):
@@ -87,20 +87,49 @@ class PolicyManagement:
                 if (localities.shape[0] > 0):
                     # This loop figure out all localtities through: states, municipalities and ws, which are into the message
                     for l in localities.itertuples(index=True, name='Pandas') :
-                        ws_data = get_ws(getattr(l, "value"), geographic)
+                        ws_data = self.get_ws(getattr(l, "value"), geographic)
                         # Check if the ws were found
                         if(ws_data.shape[0] > 0):
                             ws_id = ws_data["ws_id"].unique()
                             ws = ','.join(ws_id)
-                            forecast = self.climate.get_ForecastClimate(ws)
-                            df = pd.merge(forecast, geographic, on='ws_id', how='inner')
-                            
+                            # Ask for the historical data
+                            climatology = self.historical_data.get_Climatology(ws)
+                            df = pd.merge(climatology, geographic, on='ws_id', how='inner')
+                            # Filter by measure
+                            measures = entities.loc[(entities["type"].str.isin(["b-measure"])), ]
 
-                    
-                    answer.append(NER(Cultivars.CROP_CULTIVAR, e_data.loc[:,"cu_name"].unique(), getattr(e, "value")))
-                else:
-                   
-                
+############################################
+                            for m in measures.itertuples(index=True, name='Pandas') :
+                                df = df.loc[df["measure"].unique() ,]
+############################################                            
+                            answer.append(NER(Historical.CLIMATOLOGY, df))
+        return answer
+
+    # Method that search climatology
+    # (dataframe) entities: List of entities found in the message user
+    def climatology(self, entities):
+        answer = []        
+        # Entities were found
+        if (entities.shape[0] > 0):
+            # Get the localities
+            geographic = self.catalog.get_Geographic()
+            e_type = entities.loc[(entities["type"].str.isin(["b-locality"])), ]
+            # Try to search if locality was reconigzed
+            if(e_type.shape[0] > 0):
+                localities =  entities.loc[(entities["type"].str.isin(["b-locality"])), ]
+                # This section check if a locality was found
+                if (localities.shape[0] > 0):
+                    # This loop figure out all localtities through: states, municipalities and ws, which are into the message
+                    for l in localities.itertuples(index=True, name='Pandas') :
+                        ws_data = self.get_ws(getattr(l, "value"), geographic)
+                        # Check if the ws were found
+                        if(ws_data.shape[0] > 0):
+                            ws_id = ws_data["ws_id"].unique()
+                            ws = ','.join(ws_id)
+                            # Ask for the forecast data
+                            forecast = self.forecast.get_Climate(ws)
+                            df = pd.merge(forecast, geographic, on='ws_id', how='inner')
+                            answer.append(NER(Forecast.CLIMATE, df))
         return answer
     
     # Method that search ws names and ids into geographic data

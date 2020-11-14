@@ -3,6 +3,8 @@ from enum import Enum
 class Intent(Enum):
     LIST_CULTIVARS = 1
     LIST_PLACES = 2
+    FORECAST_CLIMATE = 3
+    HISTORICAL_CLIMATOLOGY = 4
 
 class Geographic(Enum):
     STATE = 1
@@ -15,7 +17,8 @@ class Cultivars(Enum):
     CROP_CULTIVAR = 2
     CULTIVARS_MULTIPLE = 3
 
-class ClimateForecast(Enum):
+class Forecast(Enum):
     CLIMATE = 1
-    ENTITIES_NOT_FOUND = 2
-    LOCALITIES_NOT_FOUND = 3
+
+class Historical(Enum):
+    CLIMATOLOGY = 1
