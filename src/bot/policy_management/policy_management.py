@@ -1,5 +1,5 @@
 import pandas as pd
-from nlu.enums import Geographic, Cultivars, Forecast
+from nlu.enums import Geographic, Cultivars, Forecast, Historical
 from policy_management.catalog import Catalog
 from policy_management.forecast import ForecastData
 from policy_management.historical import HistoricalData
@@ -9,7 +9,7 @@ class PolicyManagement:
 
     def __init__(self, url):
         self.url_base = url        
-        self.headers = {'Content-Type': 'application/json'} # 'application/json'
+        self.headers = {'Content-Type': 'application/json'}
         self.catalog = Catalog(url, self.headers)
         self.forecast_data = ForecastData(url, self.headers)
         self.historical_data = HistoricalData(url, self.headers)
@@ -71,9 +71,52 @@ class PolicyManagement:
                             answer.append(NER(Cultivars.CULTIVARS_MULTIPLE, e_data.loc[:,"cu_name"].unique()))
         return answer
     
+    # Method that search climatology
+    # (dataframe) entities: List of entities found in the message user
+    def historical_climatology(self, entities):
+        answer = []        
+        # Entities were found
+        if (entities.shape[0] > 0):
+            # Get the localities
+            geographic = self.catalog.get_Geographic()
+            e_type = entities.loc[(entities["type"].str.isin(["b-locality"])), ]
+            # Try to search if locality was reconigzed
+            if(e_type.shape[0] > 0):
+                localities =  entities.loc[(entities["type"].str.isin(["b-locality"])), ]
+                # This section check if a locality was found
+                if (localities.shape[0] > 0):
+                    # This loop figure out all localtities through: states, municipalities and ws, which are into the message
+                    for l in localities.itertuples(index=True, name='Pandas') :
+                        ws_data = self.get_ws(getattr(l, "value"), geographic)
+                        # Check if the ws were found
+                        if(ws_data.shape[0] > 0):
+                            ws_id = ws_data["ws_id"].unique()
+                            ws = ','.join(ws_id)
+                            # Ask for the historical data
+                            climatology = self.historical_data.get_Climatology(ws)
+                            df = pd.merge(climatology, geographic, on='ws_id', how='inner')
+                            # Filter by measure
+                            measures = entities.loc[(entities["type"].str.isin(["b-measure"])), ]
+                            if measures.shape[0] > 0:
+                                me = measures.loc[:,"value"].unique()
+                                for m in me :
+                                    df = df.loc[df["measure"] == get_measure_from_entities(m),:]
+                            # Filter by months
+                            months = entities.loc[(entities["type"].str.isin(["b-date"])), ]
+                            if months.shape[0] > 0:
+                                mo = months.loc[:,"value"].unique()
+                                for m in mo :
+                                    m_n = get_month_from_entities(m)
+                                    if(m_n >= 0):
+                                        m_n = m_n + 1
+                                        df = df.loc[df["month"] == str(m_n),:]
+                            # Add all answers
+                            answer.append(NER(Historical.CLIMATOLOGY, df))
+        return answer
+    
     # Method that search climate forecast
     # (dataframe) entities: List of entities found in the message user
-    def climate_forecast(self, entities):
+    def forecast_climate(self, entities):
         answer = []        
         # Entities were found
         if (entities.shape[0] > 0):
@@ -99,39 +142,27 @@ class PolicyManagement:
 
         return answer
 
-    # Method that search climatology
-    # (dataframe) entities: List of entities found in the message user
-    def climatology(self, entities):
-        answer = []        
-        # Entities were found
-        if (entities.shape[0] > 0):
-            # Get the localities
-            geographic = self.catalog.get_Geographic()
-            e_type = entities.loc[(entities["type"].str.isin(["b-locality"])), ]
-            # Try to search if locality was reconigzed
-            if(e_type.shape[0] > 0):
-                localities =  entities.loc[(entities["type"].str.isin(["b-locality"])), ]
-                # This section check if a locality was found
-                if (localities.shape[0] > 0):
-                    # This loop figure out all localtities through: states, municipalities and ws, which are into the message
-                    for l in localities.itertuples(index=True, name='Pandas') :
-                        ws_data = self.get_ws(getattr(l, "value"), geographic)
-                        # Check if the ws were found
-                        if(ws_data.shape[0] > 0):
-                            ws_id = ws_data["ws_id"].unique()
-                            ws = ','.join(ws_id)
-                            # Ask for the historical data
-                            climatology = self.historical_data.get_Climatology(ws)
-                            df = pd.merge(climatology, geographic, on='ws_id', how='inner')
-                            # Filter by measure
-                            measures = entities.loc[(entities["type"].str.isin(["b-measure"])), ]
-
-############################################
-                            for m in measures.itertuples(index=True, name='Pandas') :
-                                df = df.loc[df["measure"].unique() ,]
-############################################                            
-                            answer.append(NER(Historical.CLIMATOLOGY, df))
-        return answer
+    
+    # Method that returns the measure according to aclimate platform depending of request
+    # (string) value: Value to search
+    def get_measure_from_entities(value):
+        ms = 'prec'
+        if('sol' in value.lower() or 'rad' in value.lower()):
+            ms = 'sol_rad'
+        elif ('temp' in value.lower() or 'tmp' in value.lower()):
+            if('mín' in value.lower() or 'min' in value.lower()):
+                ms = 't_min'
+            else:
+                ms = 't_max'
+        return ms
+    
+    # Method that return the index of a month
+    # (string) value: Name of month
+    def get_month_from_entities(value):
+        mo = -1
+        months = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"]
+        mo = [i for i, e in months if  e in value.lower()]
+        return mo
     
     # Method that search ws names and ids into geographic data
     # (string) name: Name of the weather station

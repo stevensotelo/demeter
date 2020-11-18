@@ -2,6 +2,7 @@ import flask
 from flask import request, jsonify
 from nlu.enums import Intent, Geographic, Cultivars
 from policy_management.policy_management import PolicyManagement
+from nlg.generator import Generator
 
 
 
@@ -19,30 +20,21 @@ def home():
 def api_query():
     
     policy = PolicyManagement("https://pronosticosapi.aclimatecolombia.org/api/")
-    answer = ""
+    answer = []
 
     intent = Intent.LIST_CULTIVARS
     type = Cultivars.CULTIVARS
-    value = None
-
+    entities = None
+    
     if(intent == Intent.LIST_PLACES):
-        localities = policy.geographic(type, value)
-        for l in localities:
-            answer = answer + l + ", "
-        answer = "Los sitios disponibles son: " + answer[:-3]
+        answer = policy.geographic(type, entities)
     elif(intent == Intent.LIST_CULTIVARS):
-        cultivar = policy.cultivars(type, value)
-        if(type == Cultivars.CROP):
-            for cu in cultivar:
-                answer = answer + cu + ", "            
-        elif(type == Cultivars.CROP):
-            for cp in cultivar.loc[:,["cp_name"]].unique():
-                answer = answer + c + ": "        
-                for cu in cultivar.loc[cultivar["cp_name"] == cp,["cu_name"]].unique():
-                    answer = answer + cu + ", "
-        
-        answer = "Los cultivares disponibles son: " + answer[:-3]
-
-    return jsonify(answer)
+        answer = policy.cultivars(type, value)
+    elif(intent == Intent.HISTORICAL_CLIMATOLOGY):
+        answer = policy.historical_climatology(type, value)
+    elif(intent == Intent.FORECAST_CLIMATE):
+        answer = policy.forecast_climate(type, value)
+    
+    return jsonify(Generator.print(answer))
 
 app.run()
