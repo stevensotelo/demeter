@@ -25,3 +25,7 @@ class Historical(Enum):
 class Forecast(Enum):
     CLIMATE = 1
 
+class Error(Enum):
+    MISSING_GEOGRAPHIC = 1
+    LOCALITY_NOT_FOUND = 2
+

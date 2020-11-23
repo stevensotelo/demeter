@@ -8,3 +8,6 @@
 src/Python/__pycache__
 *.__pycache__
 *.pyc
+
+# Secrets
+/src/facebook_client/token.txt

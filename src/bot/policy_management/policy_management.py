@@ -1,5 +1,5 @@
 import pandas as pd
-from nlu.enums import Geographic, Cultivars, Forecast, Historical
+from nlu.enums import Geographic, Cultivars, Forecast, Historical, Error
 from policy_management.catalog import Catalog
 from policy_management.forecast import ForecastData
 from policy_management.historical import HistoricalData
@@ -112,6 +112,10 @@ class PolicyManagement:
                                         df = df.loc[df["month"] == str(m_n),:]
                             # Add all answers
                             answer.append(NER(Historical.CLIMATOLOGY, df))
+                        else:
+                            answer.append(NER(Error.LOCALITY_NOT_FOUND,None,getattr(l, "value")))        
+                else:
+                    answer.append(NER(Error.MISSING_GEOGRAPHIC))
         return answer
     
     # Method that search climate forecast
@@ -126,19 +130,21 @@ class PolicyManagement:
             # Try to search if locality was reconigzed
             if(e_type.shape[0] > 0):
                 localities =  entities.loc[(entities["type"].str.isin(["b-locality"])), ]
-                # This section check if a locality was found
-                if (localities.shape[0] > 0):
-                    # This loop figure out all localtities through: states, municipalities and ws, which are into the message
-                    for l in localities.itertuples(index=True, name='Pandas') :
-                        ws_data = self.get_ws(getattr(l, "value"), geographic)
-                        # Check if the ws were found
-                        if(ws_data.shape[0] > 0):
-                            ws_id = ws_data["ws_id"].unique()
-                            ws = ','.join(ws_id)
-                            # Ask for the forecast data
-                            forecast = self.forecast.get_Climate(ws)
-                            df = pd.merge(forecast, geographic, on='ws_id', how='inner')
-                            answer.append(NER(Forecast.CLIMATE, df))
+                # This loop figure out all localtities through: states, municipalities and ws, which are into the message
+                for l in localities.itertuples(index=True, name='Pandas') :
+                    ws_data = self.get_ws(getattr(l, "value"), geographic)
+                    # Check if the ws were found
+                    if(ws_data.shape[0] > 0):
+                        ws_id = ws_data["ws_id"].unique()
+                        ws = ','.join(ws_id)
+                        # Ask for the forecast data
+                        forecast = self.forecast.get_Climate(ws)
+                        df = pd.merge(forecast, geographic, on='ws_id', how='inner')
+                        answer.append(NER(Forecast.CLIMATE, df))
+                    else:
+                        answer.append(NER(Error.LOCALITY_NOT_FOUND,None,getattr(l, "value")))        
+            else:
+                answer.append(NER(Error.MISSING_GEOGRAPHIC))
 
         return answer
 

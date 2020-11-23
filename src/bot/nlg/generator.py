@@ -65,6 +65,14 @@ class Generator():
                                 m = m + "Por dentro de lo normal = " + str(getattr(me, "normal") * 100.0) + "% " 
                                 m = m +"Por debajo de lo normal = " + str(getattr(me, "lower") * 100.0) + "% "
                             msg.append(m)
+                # Message error
+                elif (isinstance(a.type, Error)):
+                    # Missing geographic
+                    if(a.type == Error.MISSING_GEOGRAPHIC):
+                        msg.append("No encontramos una localidad en su solicitud. Por favor intente especificando un municipio, también puede preguntarme sobre los municipios disponibles.")
+                    # Locality not found
+                    elif(a.type == Error.LOCALITY_NOT_FOUND):
+                        msg.append("Actualmente no tenemos la localidad: " + a.tag + " disponible en la base de datos")
         else:
             msg.append('Lo sentimos, su consulta no pudo ser procesada, por favor intente de nuevo')
         return msg
