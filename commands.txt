@@ -52,3 +52,6 @@ conda install -c anaconda scikit-learn
 pip install pytorch-pretrained-bert
 
 
+# Preprocessing
+conda install -c anaconda xlrd
+

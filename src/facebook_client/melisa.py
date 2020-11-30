@@ -1,8 +1,8 @@
-import credentials, requests
+import requests
 from flask import Flask, request
 app = Flask(__name__)
 
-FILE_TOKEN = "token.txt"
+FILE_TOKEN = "/home/hsotelo/token.txt"
 token = ""
 
 # Adds support for GET requests to our webhook
@@ -25,7 +25,7 @@ def webhook():
                 'recipient': {
                     'id': sender_id
                 },
-                'message': {"text":"hello, world!"}
+                'message': {"text":"Hola mundo"}
             }
         response = requests.post('https://graph.facebook.com/v5.0/me/messages?access_token='+token,json=request_body).json()
         return response

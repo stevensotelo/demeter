@@ -11,3 +11,6 @@ src/Python/__pycache__
 
 # Secrets
 /src/facebook_client/token.txt
+
+# Data
+/data/survey/FAQ.xlsx
