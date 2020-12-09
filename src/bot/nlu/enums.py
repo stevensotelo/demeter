@@ -1,33 +1,25 @@
 from enum import Enum
 
 class Intent(Enum):
-    FORECAST_CROP_YIELD = 0
-    FORECAST_CLIMATE = 1
-    HISTORICAL_CLIMATOLOGY = 2
-    LIST_CULTIVARS = 3
-    LIST_PLACES = 4
-    FORECAST_CROP_DATE = 5
+    FORECAST_YIELD = 0
+    FORECAST_PRECIPITATION = 1
+    CLIMATOLOGY = 2
+    CULTIVARS = 3
+    PLACES = 4
+    FORECAST_DATE = 5
 
     @staticmethod
     def list():
-        
         #return list(map(lambda c: c.name, Intent))
         return dict((label.name, idx) for idx, label in enumerate(Intent))
 
 class Slot(Enum):
-    PAD = 0
-    CROP = 1
-    B_CULTIVAR = 2
-    I_CULTIVAR = 3
-    B_LOCALITY = 4
-    I_LOCALITY = 5
-    B_MEASURE = 6
-    I_MEASURE = 7
-    B_DATE = 8
-    I_DATE = 9
-    B_UNIT = 10
-    I_UNIT = 11
-    O = 12
+    CROP = 0
+    CULTIVAR = 1
+    LOCALITY = 2
+    MEASURE = 3
+    DATE = 4
+    UNIT = 5
 
 class Geographic(Enum):
     STATE = 1
@@ -47,6 +39,7 @@ class Forecast(Enum):
     CLIMATE = 1
 
 class Error(Enum):
+    MISSING_ENTITIES = 0
     MISSING_GEOGRAPHIC = 1
     LOCALITY_NOT_FOUND = 2
 
