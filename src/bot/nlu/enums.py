@@ -1,12 +1,33 @@
 from enum import Enum
 
 class Intent(Enum):
-    LIST_CULTIVARS = 1
-    LIST_PLACES = 2    
-    HISTORICAL_CLIMATOLOGY = 3
-    FORECAST_CLIMATE = 4
-    FORECAST_CROP_YIELD = 5
-    FORECAST_CROP_DATE = 6
+    FORECAST_CROP_YIELD = 0
+    FORECAST_CLIMATE = 1
+    HISTORICAL_CLIMATOLOGY = 2
+    LIST_CULTIVARS = 3
+    LIST_PLACES = 4
+    FORECAST_CROP_DATE = 5
+
+    @staticmethod
+    def list():
+        
+        #return list(map(lambda c: c.name, Intent))
+        return dict((label.name, idx) for idx, label in enumerate(Intent))
+
+class Slot(Enum):
+    PAD = 0
+    CROP = 1
+    B_CULTIVAR = 2
+    I_CULTIVAR = 3
+    B_LOCALITY = 4
+    I_LOCALITY = 5
+    B_MEASURE = 6
+    I_MEASURE = 7
+    B_DATE = 8
+    I_DATE = 9
+    B_UNIT = 10
+    I_UNIT = 11
+    O = 12
 
 class Geographic(Enum):
     STATE = 1

@@ -1,0 +1,13 @@
+[PAD]
+B-crop
+B-cultivar
+I-cultivar
+B-locality
+I-locality
+B-measure
+I-measure
+B-date
+I-date
+B-unit
+I-unit
+O

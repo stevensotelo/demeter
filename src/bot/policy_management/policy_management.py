@@ -23,8 +23,8 @@ class PolicyManagement:
         if (entities.shape[0] == 0):
             answer.append(NER(Geographic.STATE, data.loc[:,"state_name"].unique()))
         else:
-            e_type = entities.loc[(entities["type"].str.isin(["b-locality"])), ]
-            localities =  entities.loc[(entities["type"].str.isin(["b-locality"])), ]
+            e_type = entities.loc[(entities["type"].str.isin(["B-locality"])), ]
+            localities =  entities.loc[(entities["type"].str.isin(["B-locality"])), ]
             # This section adds the list of localities  
             for l in localities_s.itertuples(index=True, name='Pandas') :
                 e_data = data[(data["state_name"].str.lower().contains(getattr(l, "value"))), ]
@@ -53,10 +53,10 @@ class PolicyManagement:
             answer.append(NER(Cultivars.CROP_MULTIPLE, data.loc[:,"cp_name"].unique()))
         # Entities were found
         else:
-            e_type = entities.loc[(entities["type"].str.isin(["b-crop"]) & entities["type"].str.isin(["b-cultivar"])), ]
+            e_type = entities.loc[(entities["type"].str.isin(["B-crop"]) & entities["type"].str.isin(["B-cultivar"])), ]
             # Specific list of crops and cultivars
             if(e_type.shape[0] > 0):
-                crops =  entities.loc[(entities["type"].str.isin(["b-crop"])), ]
+                crops =  entities.loc[(entities["type"].str.isin(["B-crop"])), ]
                 # This section adds the list of cultivars for each crop required
                 if (crops.shape[0] > 0):
                     for c in crops.itertuples(index=True, name='Pandas') :
@@ -64,7 +64,7 @@ class PolicyManagement:
                         answer.append(NER(Cultivars.CROP_CULTIVAR, e_data.loc[:,"cu_name"].unique(), getattr(c, "value")))
                 else:
                     # This section searches the cultivars required
-                    cultivars =  entities.loc[(entities["type"].str.isin(["b-cultivar"])), ]
+                    cultivars =  entities.loc[(entities["type"].str.isin(["B-cultivar"])), ]
                     if (cultivars.shape[0] > 0):
                         for c in cultivars.itertuples(index=True, name='Pandas') :
                             e_data = data[(data["cu_name"].str.lower().contains(getattr(c, "value"))), ]
@@ -79,10 +79,10 @@ class PolicyManagement:
         if (entities.shape[0] > 0):
             # Get the localities
             geographic = self.catalog.get_Geographic()
-            e_type = entities.loc[(entities["type"].str.isin(["b-locality"])), ]
+            e_type = entities.loc[(entities["type"].str.isin(["B-locality"])), ]
             # Try to search if locality was reconigzed
             if(e_type.shape[0] > 0):
-                localities =  entities.loc[(entities["type"].str.isin(["b-locality"])), ]
+                localities =  entities.loc[(entities["type"].str.isin(["B-locality"])), ]
                 # This section check if a locality was found
                 if (localities.shape[0] > 0):
                     # This loop figure out all localtities through: states, municipalities and ws, which are into the message
@@ -96,13 +96,13 @@ class PolicyManagement:
                             climatology = self.historical_data.get_Climatology(ws)
                             df = pd.merge(climatology, geographic, on='ws_id', how='inner')
                             # Filter by measure
-                            measures = entities.loc[(entities["type"].str.isin(["b-measure"])), ]
+                            measures = entities.loc[(entities["type"].str.isin(["B-measure"])), ]
                             if measures.shape[0] > 0:
                                 me = measures.loc[:,"value"].unique()
                                 for m in me :
                                     df = df.loc[df["measure"] == get_measure_from_entities(m),:]
                             # Filter by months
-                            months = entities.loc[(entities["type"].str.isin(["b-date"])), ]
+                            months = entities.loc[(entities["type"].str.isin(["B-date"])), ]
                             if months.shape[0] > 0:
                                 mo = months.loc[:,"value"].unique()
                                 for m in mo :
@@ -126,10 +126,10 @@ class PolicyManagement:
         if (entities.shape[0] > 0):
             # Get the localities
             geographic = self.catalog.get_Geographic()
-            e_type = entities.loc[(entities["type"].str.isin(["b-locality"])), ]
+            e_type = entities.loc[(entities["type"].str.isin(["B-locality"])), ]
             # Try to search if locality was reconigzed
             if(e_type.shape[0] > 0):
-                localities =  entities.loc[(entities["type"].str.isin(["b-locality"])), ]
+                localities =  entities.loc[(entities["type"].str.isin(["B-locality"])), ]
                 # This loop figure out all localtities through: states, municipalities and ws, which are into the message
                 for l in localities.itertuples(index=True, name='Pandas') :
                     ws_data = self.get_ws(getattr(l, "value"), geographic)

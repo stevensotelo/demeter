@@ -14,3 +14,7 @@ src/Python/__pycache__
 
 # Data
 /data/survey/FAQ.xlsx
+
+# Model
+
+/model
