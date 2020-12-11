@@ -1,5 +1,5 @@
 import pandas as pd
-from nlu.enums import Geographic, Cultivars, Forecast, Historical
+from nlu.enums import Geographic, Cultivars, Forecast, Historical, Error
 
 class Generator():
 
@@ -73,6 +73,9 @@ class Generator():
                     # Locality not found
                     elif(a.type == Error.LOCALITY_NOT_FOUND):
                         msg.append("Actualmente no tenemos la localidad: " + a.tag + " disponible en la base de datos")
+                    # Locality not found
+                    elif(a.type == Error.MISSING_ENTITIES):
+                        msg.append("Lo sentimos, su consulta no pudo ser procesada. No se lograron identificar las entidades")
         else:
             msg.append('Lo sentimos, su consulta no pudo ser procesada, por favor intente de nuevo')
         return msg

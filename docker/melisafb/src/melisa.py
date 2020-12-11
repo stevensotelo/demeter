@@ -3,9 +3,9 @@ import datetime
 from flask import Flask, request
 app = Flask(__name__)
 
-FOLDER_APP = "/home/hsotelo/"
+#FOLDER_APP = "/home/hsotelo/"
 #FOLDER_APP = "G:\\Me\\Code\\UOC\\TFM\\demeter\\src\\facebook_client\\"
-#FOLDER_APP = "/app/"
+FOLDER_APP = "/app/"
 FILE_TOKEN = FOLDER_APP + "token.txt"
 TOKEN = ""
 
@@ -41,6 +41,22 @@ def webhook():
         response = requests.post('https://graph.facebook.com/v9.0/me/messages?access_token='+TOKEN,json=request_body).json()
         return response
     return 'ok'
+
+@app.route("/receptor", methods=['POST'])
+def receptor():
+    data = request.get_json()
+    token = data['token']
+    messages = data['text']
+    sender_id = data['user_id']
+    for m in messages:
+        request_body = {
+                'recipient': {
+                    'id': sender_id
+                },
+                'message': {"text":m}
+            }
+        response = requests.post('https://graph.facebook.com/v9.0/me/messages?access_token='+TOKEN,json=request_body).json()
+    return response
 
 
 if __name__ == "__main__":

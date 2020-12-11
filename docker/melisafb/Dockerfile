@@ -19,5 +19,5 @@ CMD ["python", "melisa.py"]
 # docker build -t stevensotelo/melisafb:latest .
 # docker run --name melisa_fb -p 4000:80  stevensotelo/melisafb:latest
 
-# docker tag 8d1d412d2974 stevensotelo/melisafb:latest
+# docker tag 02ec98fbd430 stevensotelo/melisafb:latest
 # docker push stevensotelo/melisafb:latest

@@ -1,5 +1,5 @@
 # Enviroment
-*/virtualm
+/demeter
 
 # Data
 /data
@@ -10,7 +10,10 @@ src/Python/__pycache__
 *.pyc
 
 # Secrets
-/src/facebook_client/token.txt
+/src/melisafb/token.txt
+/src/melisafb/token_demeter.txt
+/src/melisatg/credentials.py
+/src/melisatg/token_demeter.txt
 
 # Data
 /data/survey/FAQ.xlsx

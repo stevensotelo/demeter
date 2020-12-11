@@ -17,6 +17,8 @@ class Chat(Document):
     user = ReferenceField(User)
     text = StringField(required=True)
     date = DateTimeField(required=True)
-    intent = StringField(max_length=30)
-    slots = ListField(EmbeddedDocumentField(Slot))
+    intent_id = IntField()
+    intent_name = StringField(max_length=30)
+    ext_id = StringField(max_length=200)
+    slots = DictField()
     

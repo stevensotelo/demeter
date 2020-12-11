@@ -1,5 +1,6 @@
 import os
 from transformers import BertTokenizer
+import tensorflow as tf
 from tensorflow import keras
 from nlu.enums import Intent, Slot
 
@@ -10,25 +11,26 @@ class NLUTasks:
         self.model_path = model_path        
         self.model_name = model_name
 
-        self.model = keras.models.load_model(self.model_path)
+        # Load model
+        self.model = tf.saved_model.load(self.model_path)
         self.tokenizer = BertTokenizer.from_pretrained(self.model_name)
 
         # Load Intents
-        file_params = open(os.path.join(params_path,"intents.txt") params_path , 'r')
-        self.intent_names = file_params.readlines()
+        with open(os.path.join(params_path,"intents.txt") , 'r') as file_params:
+            self.intent_names = file_params.read().split("\n")
         self.intent_map = dict((label, idx) for idx, label in enumerate(self.intent_names))
-        file_params.close()
-
+        
         # Load Slots
-        file_params = open(os.path.join(params_path,"slots.txt") params_path , 'r')
-        self.slot_names = file_params.readlines()
+        with open(os.path.join(params_path,"slots.txt") , 'r') as file_params:
+            self.slot_names = file_params.read().split("\n")
         self.slot_map = {}
         for label in self.slot_names:
             self.slot_map[label] = len(self.slot_map)
+        print(self.slot_map)
 
 
     def _decode_predictions(self, text, intent_id, slot_ids):
-        info = {"intent": intent_id, "name", self.intent_names[intent_id]}
+        info = {"intent": intent_id, "name" : self.intent_names[intent_id]}
         collected_slots = {}
         active_slot_words = []
         active_slot_name = None
@@ -65,5 +67,5 @@ class NLUTasks:
         slot_logits, intent_logits = outputs
         slot_ids = slot_logits.numpy().argmax(axis=-1)[0, 1:-1]
         intent_id = intent_logits.numpy().argmax(axis=-1)[0]
-        return self._decode_predictions(text, tokenizer,  slot_names,intent_id, slot_ids)
+        return self._decode_predictions(text, intent_id, slot_ids)
 
