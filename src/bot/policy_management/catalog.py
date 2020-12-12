@@ -55,7 +55,7 @@ class Catalog:
         # Set the url for getting data
         api_url = '{0}Agronomic/true/json'.format(self.url_base, verify=False)
         # Send the request to the web api
-        response = requests.get(api_url, headers=self.headers)        
+        response = requests.get(api_url, headers=self.headers, verify=False)        
         if response.status_code == 200: 
             # Load all states with their information
             json_data = json.loads(response.content.decode('utf-8'))

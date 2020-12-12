@@ -69,7 +69,7 @@ def api_query():
 
             # Decoded message
             utterance = nlu_o.nlu(message)
-
+            print(utterance)
             # Update chat
             chat.intent_id = utterance["intent"]
             chat.intent_name = utterance["name"]
@@ -90,11 +90,10 @@ def api_query():
             elif(intent == Intent.FORECAST_YIELD):
                 answer = policy.forecast_yield(entities)
             elif(intent == Intent.FORECAST_DATE):
-                answer = policy.geographic(entities)
+                answer = policy.forecast_yield(entities, best_date=True)
             
             answers = Generator.print(answer)
-            answers += ["En estos momentos estoy aprendiendo a responder a tus preguntas, por favor ayúdame a aprender respondiendo la siguiente encuesta: ",
-                        "https://demeter.paperform.co/?4ctj8=" + str(chat.pk)]
+            answers += ["En estos momentos estoy aprendiendo a responder a tus preguntas, por favor ayúdame a mejorar con esta encuesta: https://demeter.paperform.co/?4ctj8=" + str(chat.pk)]
             request_body = {"user_id": user_id, "token": melisa.token, "chat_id":chat_id, "text": answers}
             response = requests.post(melisa.url_post,json=request_body)
             return 'ok'

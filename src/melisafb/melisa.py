@@ -28,10 +28,7 @@ def webhook():
             return request.args.get("hub.challenge")
         return 'Unable to authorise.'
     else:
-        data = request.get_json()
-        print(data)
-        print(str(data))
-        request_body = None
+        data = request.get_json()        
         for entry in data['entry']:
             for message in entry['messaging']:
                 if message.get('message'):

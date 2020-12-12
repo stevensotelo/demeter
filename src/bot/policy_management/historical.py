@@ -14,7 +14,7 @@ class HistoricalData:
         # Set the url for getting data        
         api_url = self.url_base + 'Historical/Climatology/' + ws + '/json'
         # Send the request to the web api
-        response = requests.get(api_url, headers=self.headers)        
+        response = requests.get(api_url, headers=self.headers, verify=False)        
         if response.status_code == 200: 
             # Load all states with their information
             json_data = json.loads(response.content.decode('utf-8'))
@@ -23,7 +23,7 @@ class HistoricalData:
             for w in json_data:
                 for m in w['monthly_data']:
                     for d in m['data']:
-                        df = df.append(pd.Series(w['weather_station'], m['month'], d['measure'], d['value']));
+                        df = df.append(pd.Series([w['weather_station'], m['month'], d['measure'], d['value']]), ignore_index=True);
             df.columns = ["ws_id", "month", "measure", "value"]
             return df
         else:

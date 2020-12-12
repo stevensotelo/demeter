@@ -14,7 +14,7 @@ class ForecastData:
         # Set the url for getting data        
         api_url = self.url_base + 'Forecast/Climate/' + ws + '/true/json'                
         # Send the request to the web api        
-        response = requests.get(api_url, headers=self.headers)        
+        response = requests.get(api_url, headers=self.headers, verify=False)        
         if response.status_code == 200: 
             # Load all states with their information
             df = pd.DataFrame()
@@ -24,8 +24,11 @@ class ForecastData:
                 for m in w['data']:
                     for d in m['probabilities']:
                         df = df.append(pd.Series(w['weather_station'], m['year'], m['month'], d['measure'], d['lower'], d['normal'], d['upper']));
-            df.columns = ["ws_id", "year", "month", "measure", "lower", "normal", "upper"]
-            return df
+            if df.shape[0] > 0:
+                df.columns = ["ws_id", "year", "month", "measure", "lower", "normal", "upper"]
+                return df
+            else:
+                return None
         else:
             return None
         
@@ -36,7 +39,7 @@ class ForecastData:
         # Set the url for getting data        
         api_url = self.url_base + 'Forecast/Yield/' + ws + '/json'                
         # Send the request to the web api
-        response = requests.get(api_url, headers=self.headers)        
+        response = requests.get(api_url, headers=self.headers, verify=False)        
         if response.status_code == 200: 
             # Load all states with their information
             df = pd.DataFrame()
@@ -45,8 +48,11 @@ class ForecastData:
             for w in json_data['yield']:
                 for y in w['yield']:
                     for d in y['data']:
-                        df = df.append(pd.Series(w['weather_station'], y['cultivar'], y['soil'], y['start'], y['end'], d['measure'], d['avg'], d['min'], d['max'],d['sd'],d['conf_lower'],d['conf_upper']));
-            df.columns = ["ws_id", "cu_id", "so_id", "start", "end", "measure", "avg", "min", "max", "sd", "conf_lower","conf_upper"]
-            return df
+                        df = df.append(pd.Series(w['weather_station'], y['cultivar'], y['soil'], y['start'], y['end'], d['measure'], d['avg'], d['min'], d['max'],d['sd'],d['conf_lower'],d['conf_upper']))
+            if df.shape[0] > 0:
+                df.columns = ["ws_id", "cu_id", "so_id", "start", "end", "measure", "avg", "min", "max", "sd", "conf_lower","conf_upper"]
+                return df
+            else:
+                return None
         else:
             return None

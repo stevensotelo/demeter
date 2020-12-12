@@ -11,7 +11,7 @@ class PolicyManagement:
         self.url_base = url        
         self.headers = {'Content-Type': 'application/json'}
         self.catalog = Catalog(url, self.headers)
-        self.forecast_data = ForecastData(url, self.headers)
+        self.forecast = ForecastData(url, self.headers)
         self.historical_data = HistoricalData(url, self.headers)
 
     # Method that search geographic places
@@ -28,21 +28,21 @@ class PolicyManagement:
                 answer.append(NER(Geographic.STATE, data.loc[:,"state_name"].unique()))
             else:            
                 # This section adds the list of localities  
-                for l in entities["locality"] :
-                    e_data = data[(data["state_name"].str.lower().contains(l.lower())), ]
-                    # Check if the message has state name in order to send the municipalities
+                l = entities["locality"]                    
+                e_data = data.loc[data["state_name"].str.contains(l.lower(), case = False), :]
+                # Check if the message has state name in order to send the municipalities
+                if(e_data.shape[0] > 0):
+                    answer.append(NER(Geographic.MUNICIPALITIES_STATE, e_data.loc[:,"municipality_name"].unique(), l))
+                else:
+                    e_data = data.loc[data["municipality_name"].str.contains(l.lower(), case = False),: ]
+                    # Check if message has municipality name in order to send weather stations
                     if(e_data.shape[0] > 0):
-                        answer.append(NER(Geographic.MUNICIPALITIES_STATE, e_data.loc[:,"municipality_name"].unique(), l))
+                        answer.append(NER(Geographic.WS_MUNICIPALITY, e_data.loc[:,"ws_name"].unique(),l))
                     else:
-                        e_data = data[(data["municipality_name"].str.lower().contains(l.lower())), ]
-                        # Check if message has municipality name in order to send weather stations
+                        e_data = data.loc[data["ws_name"].str.contains(l.lower(), case = False),: ]
+                        # Check if message has weather station name in order to send the ws found
                         if(e_data.shape[0] > 0):
-                            answer.append(NER(Geographic.WS_MUNICIPALITY, e_data.loc[:,"ws_name"].unique(),l))
-                        else:
-                            e_data = data[(data["ws_name"].str.lower().contains(l.lower())), ]
-                            # Check if message has weather station name in order to send the ws found
-                            if(e_data.shape[0] > 0):
-                                answer.append(NER(Geographic.WEATHER_STATION, e_data.loc[:,"ws_name"].unique(),l))
+                            answer.append(NER(Geographic.WEATHER_STATION, e_data.loc[:,"ws_name"].unique(),l))
         return answer
     
     # Method that search cultivars available
@@ -59,16 +59,16 @@ class PolicyManagement:
             # Entities were found
             else:
                 # This section adds the list of cultivars for each crop required
-                if (len(entities["crop"]) > 0):
-                    for c in entities["crop"] :
-                        e_data = data[(data["cp_name"].str.lower() == c.lower()), ]
-                        answer.append(NER(Cultivars.CROP_CULTIVAR, e_data.loc[:,"cu_name"].unique(), c))
+                if "crop" in entities.keys():
+                    c = entities["crop"]
+                    e_data = data.loc[data["cp_name"].str.contains(c.lower(), case=False), :]
+                    answer.append(NER(Cultivars.CROP_CULTIVAR, e_data.loc[:,"cu_name"].unique(), c))
                 else:
                     # This section searches the cultivars required
-                    if (len(entities["cultivar"]) > 0):
-                        for c in entities["cultivar"] :
-                            e_data = data[(data["cu_name"].str.lower().contains(c.lower())), ]
-                            answer.append(NER(Cultivars.CULTIVARS_MULTIPLE, e_data.loc[:,"cu_name"].unique()))
+                    if "cultivar" in entities.keys():
+                        c = entities["cultivar"]
+                        e_data = data.loc[data["cu_name"].str.contains(c.lower(), case=False),: ]
+                        answer.append(NER(Cultivars.CULTIVARS_MULTIPLE, e_data.loc[:,"cu_name"].unique(), c))
                     else:
                         answer.append(NER(Cultivars.CROP_MULTIPLE, data.loc[:,"cp_name"].unique()))
         return answer
@@ -85,38 +85,36 @@ class PolicyManagement:
                 answer.append(NER(Error.ERROR_ACLIMATE))
             else:
                 # Try to search if locality was reconigzed
-                if(len(entities["locality"]) > 0):
+                if "locality" in entities.keys():
                     # This loop figure out all localtities through: states, municipalities and ws, which are into the message
-                    for l in entities["locality"] :
-                        ws_data = self.get_ws(l, geographic)
-                        # Check if the ws were found
-                        if(ws_data.shape[0] > 0):
-                            ws_id = ws_data["ws_id"].unique()
-                            ws = ','.join(ws_id)
-                            # Ask for the historical data
-                            climatology = self.historical_data.get_Climatology(ws)
-                            if climatology is None:
-                                answer.append(NER(type = Error.ERROR_ACLIMATE_CLIMATOLOGY, tag = l))
-                            else:
-                                df = pd.merge(climatology, geographic, on='ws_id', how='inner')
-                                # Filter by measure
-                                if len(entities["measure"]) > 0:                            
-                                    dft = pd.DataFrame()
-                                    for m in entities["measure"] :
-                                        dft = dft.append(df.loc[df["measure"] == self.get_measure_from_entities(m),:], ignore_index=True)
-                                    if(dft.shape[0] > 0):
-                                        df = dft
-                                # Filter by months
-                                if len(entities["date"]) > 0:                            
-                                    for m in entities["date"] :
-                                        m_n = self.get_month_from_entities(m)
-                                        if(m_n >= 0):
-                                            m_n = m_n + 1
-                                            df = df.loc[df["month"] == str(m_n),:]
-                                # Add all answers
-                                answer.append(NER(Historical.CLIMATOLOGY, df))
+                    l = entities["locality"]
+                    ws_data = self.get_ws(l, geographic)
+                    # Check if the ws were found
+                    if ws_data.shape[0] > 0:
+                        ws_id = ws_data["ws_id"].unique()
+                        ws = ','.join(ws_id)
+                        # Ask for the historical data
+                        climatology = self.historical_data.get_Climatology(ws)
+                        if climatology is None:
+                            answer.append(NER(type = Error.ERROR_ACLIMATE_CLIMATOLOGY, tag = l))
                         else:
-                            answer.append(NER(Error.LOCALITY_NOT_FOUND,None,getattr(l, "value")))  
+                            df = pd.merge(climatology, geographic, on='ws_id', how='inner')
+                            # Filter by measure
+                            if "measure" in entities.keys():                            
+                                dft = pd.DataFrame()
+                                dft = dft.append(df.loc[df["measure"] == self.get_measure_from_entities(entities["measure"]),:], ignore_index=True)
+                                if(dft.shape[0] > 0):
+                                    df = dft
+                            # Filter by months
+                            if "date" in entities. keys():                            
+                                m_n = self.get_month_from_entities(entities["date"])                                
+                                if(len(m_n) >= 0):
+                                    m_n = m_n + 1
+                                    df = df.loc[df["month"].isin(m_n),:]
+                            # Add all answers
+                            answer.append(NER(Historical.CLIMATOLOGY, df, l))
+                    else:
+                        answer.append(NER(Error.LOCALITY_NOT_FOUND,tag = l))  
                 else:
                     answer.append(NER(Error.MISSING_GEOGRAPHIC))
         else:
@@ -135,23 +133,23 @@ class PolicyManagement:
                 answer.append(NER(Error.ERROR_ACLIMATE))
             else:
                 # Try to search if locality was reconigzed
-                if(len(entities["locality"]) > 0):                
+                if "locality" in entities.keys():                
                     # This loop figure out all localtities through: states, municipalities and ws, which are into the message
-                    for l in entities["locality"] :
-                        ws_data = self.get_ws(l, geographic)
-                        # Check if the ws were found
-                        if(ws_data.shape[0] > 0):
-                            ws_id = ws_data["ws_id"].unique()
-                            ws = ','.join(ws_id)
-                            # Ask for the forecast data
-                            forecast = self.forecast.get_Climate(ws)
-                            if forecast is None:
-                                answer.append(NER(type = Error.ERROR_ACLIMATE_FORECAST_CLIMATE, tag = l))
-                            else:
-                                df = pd.merge(forecast, geographic, on='ws_id', how='inner')
-                                answer.append(NER(Forecast.CLIMATE, df))
+                    l = entities["locality"]
+                    ws_data = self.get_ws(l, geographic)
+                    # Check if the ws were found
+                    if(ws_data.shape[0] > 0):
+                        ws_id = ws_data["ws_id"].unique()
+                        ws = ','.join(ws_id)
+                        # Ask for the forecast data
+                        forecast = self.forecast.get_Climate(ws)
+                        if forecast is None:
+                            answer.append(NER(type = Error.ERROR_ACLIMATE_FORECAST_CLIMATE, tag = l))
                         else:
-                            answer.append(NER(Error.LOCALITY_NOT_FOUND,None,l))        
+                            df = pd.merge(forecast, geographic, on='ws_id', how='inner')
+                            answer.append(NER(Forecast.CLIMATE, df))
+                    else:
+                        answer.append(NER(Error.LOCALITY_NOT_FOUND,tag=l))        
                 else:
                     answer.append(NER(Error.MISSING_GEOGRAPHIC))
         else:
@@ -160,75 +158,75 @@ class PolicyManagement:
 
     # Method that search yield forecast
     # (dataframe) entities: List of entities found in the message user
-    def forecast_yield(self, entities):
+    def forecast_yield(self, entities, best_date = False):
         answer = []        
         # Entities were found
-        if (len(entities) > 0):
-            if(len(entities["cultivar"]) > 0 or len(entities["crop"]) > 0):
-                # Get the localities
-                geographic = self.catalog.get_Geographic()
-                cultivars = self.catalog.get_Cultivars()
-                soils = self.catalog.get_Soils()
-                if geographic is None or cultivars is None or soils is None:
-                    answer.append(NER(Error.ERROR_ACLIMATE))
-                else:
-                    # Try to search if locality was reconigzed
-                    if(len(entities["locality"]) > 0):                
-                        # This loop figure out all localtities through: states, municipalities and ws, which are into the message
-                        for l in entities["locality"] :
-                            ws_data = self.get_ws(l, geographic)
-                            # Check if the ws were found
-                            if(ws_data.shape[0] > 0):
-                                ws_id = ws_data["ws_id"].unique()
-                                ws = ','.join(ws_id)
-                                # Ask for the forecast data
-                                forecast = self.forecast.get_Yield(ws)
-                                if forecast is None:
-                                    answer.append(NER(type = Error.ERROR_ACLIMATE_FORECAST_YIELD, tag = l))
-                                else:
-                                    df = pd.merge(forecast, geographic, on='ws_id', how='inner')
-                                    df = pd.merge(df, cultivars, on='cu_id', how='inner')
-                                    df = pd.merge(df, soils, on='so_id', how='inner')
-                                    # Filtering by cultivar
-                                    filter_cultivar = False
-                                    filtert_crop = False
-                                    if(len(entities["cultivar"])> 0):
-                                        dft = pd.DataFrame()
-                                        for cu in entities["cultivar"] :
-                                            dft = dft.append(df.loc[df["cu_name"].str.lower().contains(cu.lower()) ,:], ignore_index=True)
-                                        if(dft.shape[0] > 0):
-                                            df = dft
-                                            filter_cultivar = True
-                                    # Filter by crop if couldn't filter by cultivar
-                                    if(filter_cultivar == False and len(entities["crop"])> 0):
-                                        dft = pd.DataFrame()
-                                        for cp in entities["crop"] :
-                                            dft = dft.append(df.loc[df["cp_name"].str.lower().contains(cp.lower()) ,:], ignore_index=True)
-                                        if(dft.shape[0] > 0):
-                                            df = dft
-                                            filtert_crop = True
-                                    # Check if could filter by crop or cultivar
-                                    if filter_cultivar or filtert_crop:
-                                        print("hola")
-
-                                    # Filter by measure
-                                    if len(entities["measure"]) > 0:                            
-                                        dft = pd.DataFrame()
-                                        for m in entities["measure"] :
-                                            dft = dft.append(df.loc[df["measure"] == self.get_measure_from_entities(m),:], ignore_index=True)
-                                        if(dft.shape[0] > 0):
-                                            df = dft
-                                    answer.append(NER(Forecast.YIELD_PERFORMANCE, df))
-                            else:
-                                answer.append(NER(Error.LOCALITY_NOT_FOUND,None,l))        
-                    else:
-                        answer.append(NER(Error.MISSING_GEOGRAPHIC))
+        if (len(entities) > 0):            
+            # Get the localities
+            geographic = self.catalog.get_Geographic()
+            cultivars = self.catalog.get_Cultivars()
+            soils = self.catalog.get_Soils()
+            if geographic is None or cultivars is None or soils is None:
+                answer.append(NER(Error.ERROR_ACLIMATE))
             else:
-                answer.append(NER(Error.MISSING_CROP_CULTIVAR))
+                # Try to search if locality was reconigzed
+                if "locality" in entities.keys():                
+                    # This loop figure out all localtities through: states, municipalities and ws, which are into the message
+                    l = entities["locality"]
+                    ws_data = self.get_ws(l, geographic)
+                    # Check if the ws were found
+                    if(ws_data.shape[0] > 0):
+                        ws_id = ws_data["ws_id"].unique()
+                        ws = ','.join(ws_id)
+                        # Ask for the forecast data
+                        forecast = self.forecast.get_Yield(ws)
+                        if forecast is None:
+                            answer.append(NER(type = Error.ERROR_ACLIMATE_FORECAST_YIELD, tag = l))
+                        else:
+                            df = pd.merge(forecast, geographic, on='ws_id', how='inner')
+                            df = pd.merge(df, cultivars, on='cu_id', how='inner')
+                            df = pd.merge(df, soils, on='so_id', how='inner')
+                            # Filtering by cultivar
+                            filter_cultivar = False
+                            if "cultivar" in entities.keys():
+                                cu = entities["cultivar"] 
+                                dft = df.loc[df["cu_name"].str.contains(cu.lower(), case = False) ,:]
+                                if(dft.shape[0] > 0):
+                                    df = dft
+                                    filter_cultivar = True
+                            # Filter by crop if couldn't filter by cultivar
+                            if(filter_cultivar == False and "crop" in entities.keys()):
+                                cp = entities["crop"]
+                                dft = df.loc[df["cp_name"].str.contains(cp.lower(), case = False) ,:]
+                                if(dft.shape[0] > 0):
+                                    df = dft
+                            # Filter by measure
+                            df = df.loc[df["measure"].isin(["yield_14", "yield_0"]),:]
+                            # Top five by crop 
+                            crops = df["cp_name"].unique()
+                            for c in crops:
+                                amount = 5
+                                type_answer = Forecast.YIELD_PERFORMANCE
+                                dft = pd.DataFrame()
+                                if best_date:
+                                    amount = 1
+                                    type_answer = Forecast.YIELD_DATE
+                                    stations = df["ws_id"].unique()
+                                    for s in stations:
+                                        dft = dft.append(df.loc[df["cp_name"] == c & df["ws_id"] == s ,:].nlargest(amount,"avg"), ignore_index = True)    
+                                else:
+                                    dft = df.loc[df["cp_name"] == c,:].nlargest(amount,"avg")
+                                answer.append(NER(type_answer, dft))
+                    else:
+                        answer.append(NER(Error.LOCALITY_NOT_FOUND,None,l))        
+                else:
+                    answer.append(NER(Error.MISSING_GEOGRAPHIC))
+            
         else:
             answer.append(NER(Error.MISSING_ENTITIES))
         return answer
     
+        
     # Method that returns the measure according to aclimate platform depending of request
     # (string) value: Value to search
     def get_measure_from_entities(self, value):
@@ -236,7 +234,7 @@ class PolicyManagement:
         if('sol' in value.lower() or 'rad' in value.lower()):
             ms = 'sol_rad'
         elif ('temp' in value.lower() or 'tmp' in value.lower()):
-            if('mín' in value.lower() or 'min' in value.lower()):
+            if('mín' in value.lower() or 'min' in value.lower() or 'mn' in value.lower()):
                 ms = 't_min'
             else:
                 ms = 't_max'
@@ -255,7 +253,12 @@ class PolicyManagement:
     # (dataframe) geographic: List of all geographic
     def get_ws(self, name, geographic):        
         # Search by weather station, muncipality and state names
-        ws_data = geographic[(geographic["ws_name"].str.lower().contains(name) | geographic["state_name"].str.lower().contains(name) |geographic["municipality_name"].str.lower().contains(name)), ["ws_id","ws_name"]]
+        names = name.split("_")
+        ws_data = pd.DataFrame()
+        for n in names:
+            ws = geographic.loc[ (geographic["ws_name"].str.contains(n.lower(), case = False) | geographic["state_name"].str.contains(n.lower(), case = False) | geographic["municipality_name"].str.contains(n.lower(), case = False)), ["ws_id","ws_name"]]
+            if ws.shape[0] > 0:
+                ws_data = ws_data.append(ws, ignore_index=True)
         return ws_data
 
 

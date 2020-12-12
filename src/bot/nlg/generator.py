@@ -28,43 +28,92 @@ class Generator():
                     elif(a.type == Cultivars.CROP_CULTIVAR):
                         msg.append("Las variedades para el cultivo " + a.tag + " disponibles son: " + ','.join(a.values))
                     else:
-                        msg.append("Las variedades para el cultivo " + a.tag + " disponibles son: " + ','.join(a.values))
+                        msg.append("Las variedades similares a " + a.tag + " disponibles son: " + ','.join(a.values))
                 # Historical answers
                 elif (isinstance(a.type, Historical)):
                     # Climatology answers
                     if(a.type == Historical.CLIMATOLOGY):
                         # Get ws ids
-                        ws_id = a.values[:,"ws_id"].unique()
+                        ws_id = a.values.loc[:,"ws_id"].unique()                        
                         for ws in ws_id:
                             # Filter by ws_id
-                            cl_ws = a.values[a.value["ws_id"] == ws,:]
+                            cl_ws = a.values.loc[a.values["ws_id"] == ws,:]
                             m = "Para la estación " + cl_ws["ws_name"][0] + ", la climatología es: "
                             # Get measures
-                            cl_var = cl_ws.loc[:,"measure"].unique()
+                            msg.append(m)                            
+                            cl_var = cl_ws.loc[:,"measure"].unique().tolist()
+                            # Remove climatology for terciles
+                            if "prec_ter_1" in cl_var:
+                                cl_var.remove("prec_ter_1")
+                            if "prec_ter_2" in cl_var:
+                                cl_var.remove("prec_ter_2")
                             for v in cl_var:
-                                m_name = Generator.get_climate_measure(v)
+                                m = ""
+                                m_name = Generator.get_climate_measure(v) + " (" + Generator.get_climate_unit(v) + ")"
                                 m = m + m_name + ": "
                                 cl_measure = cl_ws.loc[cl_ws["measure"] == v,:]
                                 # List according to measure
                                 for me in cl_measure.itertuples(index=True, name='Pandas') :
-                                    m = m + Generator.get_month(getattr(me, "month")) + " " + str(getattr(me, "value")) + " "
-                            msg.append(m)
+                                    m = m + Generator.get_month(getattr(me, "month")) + " " + str(int(getattr(me, "value"))) + ", "
+                                msg.append(m[:-2])
                 # Forecast answer
                 elif (isinstance(a.type, Forecast)):
                     # Climate answers
                     if(a.type == Forecast.FORECAST_CLIMATE):
                         # Get ws ids
-                        ws_id = a.values[:,"ws_id"].unique()
+                        ws_id = a.values.loc[:,"ws_id"].unique()
                         for ws in ws_id:
                             # Filter by ws_id
-                            cl_ws = a.values[a.value["ws_id"] == ws,:]
+                            cl_ws = a.values.loc[a.values["ws_id"] == ws,:]
                             m = "Para la estación " + cl_ws["ws_name"][0] + ", la predicción climática es: "
-                            for w in cl_ws.itertuples(index=True, name='Pandas') :
-                                m = m + Generator.get_month(getattr(me, "month")) + ": " 
-                                m = m + "Por encima de lo normal = " + str(getattr(me, "upper") * 100.0) + "% " 
-                                m = m + "Por dentro de lo normal = " + str(getattr(me, "normal") * 100.0) + "% " 
-                                m = m +"Por debajo de lo normal = " + str(getattr(me, "lower") * 100.0) + "% "
                             msg.append(m)
+                            for w in cl_ws.itertuples(index=True, name='Pandas') :
+                                m = ""
+                                m = m + Generator.get_month(getattr(me, "month")) + ": " 
+                                m = m + "Por encima de lo normal = " + str(round(getattr(me, "upper") * 100.0,2)) + "%, " 
+                                m = m + "Por dentro de lo normal = " + str(round(getattr(me, "normal") * 100.0, 2)) + "%, " 
+                                m = m +"Por debajo de lo normal = " + str(round(getattr(me, "lower") * 100.0,2)) + "% "
+                                msg.append(m)
+                    # yield answers
+                    elif a.type == Forecast.YIELD_PERFORMANCE:
+                        # Get ws ids
+                        ws_id = a.values.loc[:,"ws_id"].unique()
+                        for ws in ws_id:
+                            # Filter by ws_id
+                            cp_ws = a.values.loc[a.values["ws_id"] == ws,:]
+                            crops = cp_ws["cp_name"].unique()
+                            for cp in crops:
+                                m = "Para la estación " + cp_ws["ws_name"][0] + ", encontramos que el cultivo " + cp + " presenta las siguientes variedades con mejor rendimiento potencial: "
+                                msg.append(m)
+                                cu_ws = cp_ws.loc[cp_ws["cp_name"] == cp,:]
+                                cultivars = cu_ws["cu_name"].unique()
+                                for cu in cultivars:
+                                    cp_cu_data = cu_ws.loc[cu_ws["cu_name"] == cu,:]
+                                    m = cu + ": "
+                                    for ccd in cp_cu_data.itertuples(index=True, name='Pandas'):
+                                        m = m + "sembrando en " + str(getattr(ccd, "start")) + ", tipo de suelo " + getattr(ccd, "so_name") 
+                                        m = m + " puedes obtener en promedio: " + str(round(getattr(me, "avg"),2)) + " kg/ha,"
+                                        m = m + " variando con máx. de: " + str(round(getattr(me, "max"),2)) + " kg/ha"
+                                        m = m + " y un mín. de: " + str(round(getattr(me, "min"),2)) + " kg/ha"
+                                    msg.append(m)
+                    # yield answers
+                    elif a.type == Forecast.YIELD_DATE:
+                        # Get ws ids
+                        ws_id = a.values.loc[:,"ws_id"].unique()
+                        for ws in ws_id:
+                            # Filter by ws_id
+                            cp_ws = a.values.loc[a.values["ws_id"] == ws,:]
+                            crops = cp_ws["cp_name"].unique()
+                            for cp in crops:
+                                m = "Para la estación " + cp_ws["ws_name"][0] + ", encontramos que las mejores fechas de siembra para el cultivo " + cp + " son: "
+                                msg.append(m)
+                                for ccd in cp_ws.itertuples(index=True, name='Pandas'):
+                                    m = "La variedad: " + getattr(ccd, "cu_name") + ", suelo: " +  getattr(ccd, "so_name")
+                                    m = m + ", sembrando en " + str(getattr(ccd, "start"))
+                                    m = m + " puedes obtener en promedio: " + str(round(getattr(me, "avg"),2)) + " kg/ha,"
+                                    m = m + " variando con máx. de: " + str(round(getattr(me, "max"),2)) + " kg/ha"
+                                    m = m + " y un mín. de: " + str(round(getattr(me, "min"),2)) + " kg/ha"
+                                msg.append(m)
                 # Message error
                 elif (isinstance(a.type, Error)):
                     # Missing geographic
@@ -103,10 +152,22 @@ class Generator():
         elif (var == "t_min"):
             a = "temperatura mínima"
         return a
+    
+    #
+    @staticmethod
+    def get_climate_unit(var):
+        a = 'mm'
+        if(var == "sol_rad"):
+            a = "cal/cm²d"
+        elif (var == "t_max"):
+            a = "°C"
+        elif (var == "t_min"):
+            a = "°C"
+        return a
 
     # Method that return the month name
     # (int) id: Id of month
     @staticmethod
     def get_month(id):
         months = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"]
-        return months[id-1]
+        return months[int(id)-1]
