@@ -25,4 +25,6 @@ class HistoricalData:
                     for d in m['data']:
                         df = df.append(pd.Series(w['weather_station'], m['month'], d['measure'], d['value']));
             df.columns = ["ws_id", "month", "measure", "value"]
-        return df
+            return df
+        else:
+            return None

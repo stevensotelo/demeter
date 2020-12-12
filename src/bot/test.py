@@ -36,13 +36,13 @@
 #print(Intent.list())
 #print(Intent(2).value == 2)
 
-from nlu.enums import Intent, Geographic, Cultivars
-from nlu.nlu_tasks import NLUTasks
+#from nlu.enums import Intent, Geographic, Cultivars
+#from nlu.nlu_tasks import NLUTasks
 
-nlu_o  = NLUTasks(model_path = "G:\\Me\\Code\\UOC\\TFM\\demeter\\model\\demeter_model", params_path = "G:\\Me\\Code\\UOC\\TFM\\demeter\\src\\bot\\vocab")    
-message = "Cuando se puede sembrar en cali papa y yuca en ibague"
-utterance = nlu_o.nlu(message)
-print(utterance)
+#nlu_o  = NLUTasks(model_path = "G:\\Me\\Code\\UOC\\TFM\\demeter\\model\\demeter_model", params_path = "G:\\Me\\Code\\UOC\\TFM\\demeter\\src\\bot\\vocab")    
+#message = "Cuando se puede sembrar en cali papa y yuca en ibague"
+#utterance = nlu_o.nlu(message)
+#print(utterance)
 
 # import os
 
@@ -61,13 +61,15 @@ print(utterance)
 #     slot_map[label] = len(slot_map)
 # print(slot_map)
 
-# from mongoengine import *
-# from orm.orm_demeter import *
-# import datetime
+from mongoengine import *
+from orm.orm_demeter import *
+import datetime
 
-# connect('dialog')
-# melisa = Melisa.objects.get(name="facebook")
-# print(melisa.token)
+#connect('dialog')
+connect('dialog', host='192.168.199.74', port=27017)
+melisa = Melisa(name = "facebook", url_post = "https://melisafb.aclimatecolombia.org/receptor", token = "Melis@Fb2020")
+melisa.save()
+print(melisa.token)
 
 # user_id = "564546"
 # user = None

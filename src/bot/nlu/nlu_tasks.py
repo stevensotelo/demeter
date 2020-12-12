@@ -26,8 +26,6 @@ class NLUTasks:
         self.slot_map = {}
         for label in self.slot_names:
             self.slot_map[label] = len(self.slot_map)
-        print(self.slot_map)
-
 
     def _decode_predictions(self, text, intent_id, slot_ids):
         info = {"intent": intent_id, "name" : self.intent_names[intent_id]}

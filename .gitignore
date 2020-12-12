@@ -12,7 +12,7 @@ src/Python/__pycache__
 # Secrets
 /src/melisafb/token.txt
 /src/melisafb/token_demeter.txt
-/src/melisatg/credentials.py
+/src/melisatg/token.txt
 /src/melisatg/token_demeter.txt
 
 # Data

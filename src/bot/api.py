@@ -16,7 +16,6 @@ from orm.orm_demeter import *
 import datetime
 
 app = flask.Flask(__name__)
-app.config["DEBUG"] = True
 
 nlu_o = None
 aclimate = "https://pronosticosapi.aclimatecolombia.org/api/"
@@ -88,20 +87,29 @@ def api_query():
                 answer = policy.historical_climatology(entities)
             elif(intent == Intent.FORECAST_PRECIPITATION):
                 answer = policy.forecast_climate(entities)
+            elif(intent == Intent.FORECAST_YIELD):
+                answer = policy.forecast_yield(entities)
+            elif(intent == Intent.FORECAST_DATE):
+                answer = policy.geographic(entities)
             
             answers = Generator.print(answer)
-            request_body = {"user": user_id, "token": melisa.token, "chat_id":chat_id, "text": answers}
-            response = requests.post(melisa.url_post,json=request_body).json()
+            answers += ["En estos momentos estoy aprendiendo a responder a tus preguntas, por favor ayúdame a aprender respondiendo la siguiente encuesta: ",
+                        "https://demeter.paperform.co/?4ctj8=" + str(chat.pk)]
+            request_body = {"user_id": user_id, "token": melisa.token, "chat_id":chat_id, "text": answers}
+            response = requests.post(melisa.url_post,json=request_body)
             return 'ok'
         else:
             return "ERROR 2"
 
 if __name__ == "__main__":
-    #     
-    nlu_o  = NLUTasks(model_path = "G:\\Me\\Code\\UOC\\TFM\\demeter\\model\\demeter_model", params_path = "G:\\Me\\Code\\UOC\\TFM\\demeter\\src\\bot\\vocab")    
+    # It starts the model for NLU
+    nlu_o  = NLUTasks(model_path = "/home/hsotelo/demeter/model/demeter_model", params_path = "/home/hsotelo/demeter/bot/vocab")    
     # Connect with database
     #connect('mongodb://dialog:56456@localhost:27017/dialog')
-    connect('dialog')
+    #connect('dialog')
+    connect('dialog', host='192.168.199.74', port=27017)
     
-    app.run(threaded=True, port=5000)
-    #app.run(host='0.0.0.0', port=80)
+    #app.run(threaded=True, port=5000)
+    app.run(host='0.0.0.0', port=8080)
+
+# nohup python api.py > demeter.log 2>&1 &

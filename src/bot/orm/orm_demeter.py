@@ -1,17 +1,17 @@
 from mongoengine import *
 
 class Melisa(Document):
-    name = StringField(max_length=50)
+    name = StringField(required=True,max_length=50)
     url_post = URLField(required=True)
-    token = StringField(max_length=10)    
+    token = StringField(required=True,max_length=50)    
 
 class User(Document):
     melisa = ReferenceField(Melisa)
     user_id = StringField(required=True)
 
-class Slot(EmbeddedDocument):
-    name = StringField()
-    values = ListField(StringField())
+#class Slot(EmbeddedDocument):
+#    name = StringField()
+#    values = ListField(StringField())
 
 class Chat(Document):
     user = ReferenceField(User)

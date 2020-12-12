@@ -69,13 +69,24 @@ class Generator():
                 elif (isinstance(a.type, Error)):
                     # Missing geographic
                     if(a.type == Error.MISSING_GEOGRAPHIC):
-                        msg.append("No encontramos una localidad en su solicitud. Por favor intente especificando un municipio, también puede preguntarme sobre los municipios disponibles.")
+                        msg.append("Lo sentimos, no encontramos una localidad en su solicitud. Por favor intente especificando un municipio, también puede preguntarme sobre los municipios disponibles")
                     # Locality not found
                     elif(a.type == Error.LOCALITY_NOT_FOUND):
-                        msg.append("Actualmente no tenemos la localidad: " + a.tag + " disponible en la base de datos")
+                        msg.append("Lo sentimos, actualmente no tenemos la localidad: " + a.tag + " disponible en la base de datos")
                     # Locality not found
                     elif(a.type == Error.MISSING_ENTITIES):
                         msg.append("Lo sentimos, su consulta no pudo ser procesada. No se lograron identificar las entidades")
+                    # Locality not found
+                    elif(a.type == Error.ERROR_ACLIMATE):
+                        msg.append("Lo sentimos, su consulta no pudo ser procesada. No se logro conectar con el servicio de Aclimate Colombia")
+                    elif(a.type == Error.ERROR_ACLIMATE_CLIMATOLOGY):
+                        msg.append("Lo sentimos, no hay información de climatología para la localidad de: " + a.tag + " en Aclimate Colombia")
+                    elif(a.type == Error.ERROR_ACLIMATE_FORECAST_CLIMATE):
+                        msg.append("Lo sentimos, no hay información de predicción climática para la localidad de: " + a.tag + " en Aclimate Colombia")
+                    elif(a.type == Error.ERROR_ACLIMATE_FORECAST_YIELD):
+                        msg.append("Lo sentimos, no hay información de pronóstico de cultivo de para la localidad de: " + a.tag + " en Aclimate Colombia")
+                    elif(a.type == Error.MISSING_CROP_CULTIVAR):
+                        msg.append("Lo sentimos, no encontramos un cultivo o un cultivar en su solicitud. Por favor intente especificando un cultivo o cultivar, también puede preguntarme sobre los cultivares disponibles")
         else:
             msg.append('Lo sentimos, su consulta no pudo ser procesada, por favor intente de nuevo')
         return msg

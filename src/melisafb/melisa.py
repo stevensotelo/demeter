@@ -22,23 +22,23 @@ def home():
 @app.route('/webhook',methods=['GET','POST'])
 def webhook():
     if request.method == 'GET':
-        verify_token = request.args.get("hub.verify_token")    
-        print("token: " + TOKEN)
+        verify_token = request.args.get("hub.verify_token") 
         if verify_token == TOKEN:
             # Responds with the challenge token from the request
             return request.args.get("hub.challenge")
         return 'Unable to authorise.'
     else:
         data = request.get_json()
+        print(data)
+        print(str(data))
         request_body = None
-        for event in data['entry']:
-            messaging = event['messaging']
-            for message in messaging:
+        for entry in data['entry']:
+            for message in entry['messaging']:
                 if message.get('message'):
                     sender_id = message['sender']['id']
                     if message['message'].get('text'):
                         text = message['message'].get('text')
-                        url = DEMETER_URL + "?melisa=" + MELISA_NAME + "&token=" + TOKEN_DEMETER + "&user=" + sender_id + "&message" + text
+                        url = DEMETER_URL + "?melisa=" + MELISA_NAME + "&token=" + TOKEN_DEMETER + "&user=" + sender_id + "&message=" + text
                         requests.get(url)
                     else:
                         request_body = {
@@ -47,16 +47,16 @@ def webhook():
                                 },
                                 'message': {"text":"Hola, lo sentimos no podemos procesar tu mensaje. Intenta solamente con texto"}
                             }
-                        response = requests.post('https://graph.facebook.com/v9.0/me/messages?access_token='+TOKEN,json=request_body).json()
+                        requests.post('https://graph.facebook.com/v9.0/me/messages?access_token='+TOKEN,json=request_body)
     return 'ok'
 
 @app.route("/receptor", methods=['POST'])
 def receptor():
-    data = request.get_json()
+    data = request.get_json()    
     token = data['token']
     messages = data['text']
     sender_id = data['user_id']
-    if token == TOKEN:
+    if token == TOKEN_DEMETER:
         for m in messages:
             request_body = {
                     'recipient': {
@@ -64,7 +64,7 @@ def receptor():
                     },
                     'message': {"text":m}
                 }
-            response = requests.post('https://graph.facebook.com/v9.0/me/messages?access_token='+TOKEN,json=request_body).json()
+            requests.post('https://graph.facebook.com/v9.0/me/messages?access_token='+TOKEN,json=request_body)
     return 'ok'
 
 if __name__ == "__main__":
@@ -75,7 +75,7 @@ if __name__ == "__main__":
         TOKEN_DEMETER = f.read()
     
     #app.run(threaded=True, port=5000)
-    app.run(host='0.0.0.0', port=80)
+    app.run(host='0.0.0.0', port=5000)
 
 # Run in background
 # nohup python3.8 melisa.py > melisa.log 2>&1 &
