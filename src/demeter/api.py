@@ -59,7 +59,7 @@ def api_query():
                 user = User(melisa = melisa, user_id = user_id)
                 user.save()
                 request_body = {"user": user_id, "token": melisa.token, "chat_id":chat_id, "text": "Hola, soy Melisa, un bot que provee información agroclimática."}
-                response = requests.post(melisa.url_post,json=request_body).json()
+                response = requests.post(melisa.url_post,json=request_body)
             else:
                 user = User.objects.get(user_id=user_id)
 
