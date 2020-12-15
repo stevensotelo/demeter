@@ -40,13 +40,16 @@ def respond():
 
     sender_id = str(update.message.chat.id)
     ext_id = str(update.message.message_id)
-
-    # Telegram understands UTF-8, so encode text for unicode compatibility
-    text = update.message.text.encode('utf-8').decode()
-    text = re.sub(r"\W", "_", text)
-    if text != "/start":
-        url = DEMETER_URL + "?melisa=" + MELISA_NAME + "&token=" + TOKEN_DEMETER + "&user=" + sender_id + "&chat_id=" + ext_id + "&message=" + text
-        requests.get(url)
+    try:
+        # Telegram understands UTF-8, so encode text for unicode compatibility
+        text = update.message.text.encode('utf-8').decode()
+        #text = update.message.text    
+        text = re.sub(r"\W", "_", text)
+        if text != "/start":
+            url = DEMETER_URL + "?melisa=" + MELISA_NAME + "&token=" + TOKEN_DEMETER + "&user=" + sender_id + "&chat_id=" + ext_id + "&message=" + text
+            requests.get(url)
+    except Exception:
+        bot.sendMessage(chat_id=sender_id, text="Lo siento, tengo un problema procesando tu mensaje", reply_to_message_id=ext_id)
 
     return 'ok'
 
@@ -57,9 +60,13 @@ def receptor():
     messages = data['text']
     sender_id = data['user_id']
     chat_id = data['chat_id']    
+    first = True
     if token == TOKEN_DEMETER:
         for m in messages:
-            bot.sendMessage(chat_id=sender_id, text=m)
+            if first:
+                bot.sendMessage(chat_id=sender_id, text=m, reply_to_message_id=chat_id)
+            else:
+                bot.sendMessage(chat_id=sender_id, text=m)
     return 'ok'
 
 
