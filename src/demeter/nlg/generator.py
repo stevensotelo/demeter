@@ -1,5 +1,5 @@
 import pandas as pd
-from nlu.enums import Geographic, Cultivars, Forecast, Historical, Error
+from nlu.enums import Geographic, Cultivars, Forecast, Historical, Error, Commands
 
 class Generator():
 
@@ -11,8 +11,21 @@ class Generator():
         msg = []
         if(len(answers) > 0):
             for a in answers:
+                # Commands
+                if (isinstance(a.type, Commands)):
+                    if(a.type == Commands.HI):
+                        msg.append("Hola, ¿cómo puedo ayudarte?")
+                    elif(a.type == Commands.BYE):
+                        msg.append("Chao, que estés muy bien")
+                    elif(a.type == Commands.HELP):
+                        msg.append("Puedes preguntarme sobre históricos climáticos, predicción de clima y producción de cultivos")
+                        msg.append("Si quieres saber que localidades hay disponibles podrías preguntar: Municipios disponibles")
+                        msg.append("Si quieres saber sobre que cultivos hay disponibles: Que cultivos hay disponibles")
+                        msg.append("Yo intentaré identificar que información me solicitas y te daré una respuesta sobre ese tema")
+                    else:
+                        msg.append("Con mucho gusto")
                 # Geographic answers
-                if (isinstance(a.type, Geographic)):
+                elif (isinstance(a.type, Geographic)):
                     if(a.type == Geographic.STATE):
                         msg.append("Los departamentos disponibles son: " + ','.join(a.values))
                     elif(a.type == Geographic.MUNICIPALITIES_STATE):
@@ -20,7 +33,7 @@ class Generator():
                     elif(a.type == Geographic.WS_MUNICIPALITY):
                         msg.append("Las estaciones climáticas para el municipio " + a.tag + " disponibles son: " + ','.join(a.values))
                     else:
-                        msg.append("En el municipio " + a.tag + " están las estaciones: " +  + ','.join(a.values))
+                        msg.append("En el municipio " + a.tag + " están las estaciones: " +  ','.join(a.values))
                 # Cultivars answers
                 elif (isinstance(a.type, Cultivars)):
                     if(a.type == Cultivars.CROP_MULTIPLE):
@@ -38,7 +51,7 @@ class Generator():
                         for ws in ws_id:
                             # Filter by ws_id
                             cl_ws = a.values.loc[a.values["ws_id"] == ws,:]
-                            m = "Para la estación " + cl_ws["ws_name"][0] + ", la climatología es: "
+                            m = "Para la estación " + cl_ws.iloc[0]["ws_name"] + ", la climatología es: "
                             # Get measures
                             msg.append(m)                            
                             cl_var = cl_ws.loc[:,"measure"].unique().tolist()
@@ -59,20 +72,20 @@ class Generator():
                 # Forecast answer
                 elif (isinstance(a.type, Forecast)):
                     # Climate answers
-                    if(a.type == Forecast.FORECAST_CLIMATE):
+                    if(a.type == Forecast.CLIMATE):
                         # Get ws ids
                         ws_id = a.values.loc[:,"ws_id"].unique()
                         for ws in ws_id:
                             # Filter by ws_id
                             cl_ws = a.values.loc[a.values["ws_id"] == ws,:]
-                            m = "Para la estación " + cl_ws["ws_name"][0] + ", la predicción climática es: "
+                            m = "Para la estación " + cl_ws.iloc[0]["ws_name"] + ", la predicción climática es: "
                             msg.append(m)
                             for w in cl_ws.itertuples(index=True, name='Pandas') :
-                                m = ""
-                                m = m + Generator.get_month(getattr(me, "month")) + ": " 
-                                m = m + "Por encima de lo normal = " + str(round(getattr(me, "upper") * 100.0,2)) + "%, " 
-                                m = m + "Por dentro de lo normal = " + str(round(getattr(me, "normal") * 100.0, 2)) + "%, " 
-                                m = m +"Por debajo de lo normal = " + str(round(getattr(me, "lower") * 100.0,2)) + "% "
+                                m = "Para el trimestre "
+                                m = m + Generator.get_month(getattr(w, "month")) + "-" + Generator.get_month(getattr(w, "month") + 1) + "-" + Generator.get_month(getattr(w, "month")+2) + ": " 
+                                m = m + "Por encima de lo normal = " + str(round(getattr(w, "upper") * 100.0,2)) + "%, " 
+                                m = m + "Por dentro de lo normal = " + str(round(getattr(w, "normal") * 100.0, 2)) + "%, " 
+                                m = m +"Por debajo de lo normal = " + str(round(getattr(w, "lower") * 100.0,2)) + "% "
                                 msg.append(m)
                     # yield answers
                     elif a.type == Forecast.YIELD_PERFORMANCE:
@@ -83,7 +96,7 @@ class Generator():
                             cp_ws = a.values.loc[a.values["ws_id"] == ws,:]
                             crops = cp_ws["cp_name"].unique()
                             for cp in crops:
-                                m = "Para la estación " + cp_ws["ws_name"][0] + ", encontramos que el cultivo " + cp + " presenta las siguientes variedades con mejor rendimiento potencial: "
+                                m = "Para la estación " + cp_ws.iloc[0]["ws_name"] + ", encontramos que el cultivo " + cp + " presenta las siguientes variedades con mejor rendimiento potencial: "
                                 msg.append(m)
                                 cu_ws = cp_ws.loc[cp_ws["cp_name"] == cp,:]
                                 cultivars = cu_ws["cu_name"].unique()
@@ -92,9 +105,9 @@ class Generator():
                                     m = cu + ": "
                                     for ccd in cp_cu_data.itertuples(index=True, name='Pandas'):
                                         m = m + "sembrando en " + str(getattr(ccd, "start")) + ", tipo de suelo " + getattr(ccd, "so_name") 
-                                        m = m + " puedes obtener en promedio: " + str(round(getattr(me, "avg"),2)) + " kg/ha,"
-                                        m = m + " variando con máx. de: " + str(round(getattr(me, "max"),2)) + " kg/ha"
-                                        m = m + " y un mín. de: " + str(round(getattr(me, "min"),2)) + " kg/ha"
+                                        m = m + " puedes obtener en promedio: " + str(round(getattr(ccd, "avg"),2)) + " kg/ha,"
+                                        m = m + " variando con máx. de: " + str(round(getattr(ccd, "max"),2)) + " kg/ha"
+                                        m = m + " y un mín. de: " + str(round(getattr(ccd, "min"),2)) + " kg/ha"
                                     msg.append(m)
                     # yield answers
                     elif a.type == Forecast.YIELD_DATE:
@@ -105,14 +118,14 @@ class Generator():
                             cp_ws = a.values.loc[a.values["ws_id"] == ws,:]
                             crops = cp_ws["cp_name"].unique()
                             for cp in crops:
-                                m = "Para la estación " + cp_ws["ws_name"][0] + ", encontramos que las mejores fechas de siembra para el cultivo " + cp + " son: "
+                                m = "Para la estación " + cp_ws.iloc[0]["ws_name"] + ", encontramos que las mejores fechas de siembra para el cultivo " + cp + " son: "
                                 msg.append(m)
                                 for ccd in cp_ws.itertuples(index=True, name='Pandas'):
                                     m = "La variedad: " + getattr(ccd, "cu_name") + ", suelo: " +  getattr(ccd, "so_name")
                                     m = m + ", sembrando en " + str(getattr(ccd, "start"))
-                                    m = m + " puedes obtener en promedio: " + str(round(getattr(me, "avg"),2)) + " kg/ha,"
-                                    m = m + " variando con máx. de: " + str(round(getattr(me, "max"),2)) + " kg/ha"
-                                    m = m + " y un mín. de: " + str(round(getattr(me, "min"),2)) + " kg/ha"
+                                    m = m + " puedes obtener en promedio: " + str(round(getattr(ccd, "avg"),2)) + " kg/ha,"
+                                    m = m + " variando con máx. de: " + str(round(getattr(ccd, "max"),2)) + " kg/ha"
+                                    m = m + " y un mín. de: " + str(round(getattr(ccd, "min"),2)) + " kg/ha"
                                 msg.append(m)
                 # Message error
                 elif (isinstance(a.type, Error)):

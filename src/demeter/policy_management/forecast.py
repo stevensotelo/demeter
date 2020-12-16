@@ -23,7 +23,7 @@ class ForecastData:
             for w in json_data['climate']:
                 for m in w['data']:
                     for d in m['probabilities']:
-                        df = df.append(pd.Series(w['weather_station'], m['year'], m['month'], d['measure'], d['lower'], d['normal'], d['upper']));
+                        df = df.append(pd.Series([w['weather_station'], m['year'], m['month'], d['measure'], d['lower'], d['normal'], d['upper']]), ignore_index=True)
             if df.shape[0] > 0:
                 df.columns = ["ws_id", "year", "month", "measure", "lower", "normal", "upper"]
                 return df
@@ -48,7 +48,7 @@ class ForecastData:
             for w in json_data['yield']:
                 for y in w['yield']:
                     for d in y['data']:
-                        df = df.append(pd.Series(w['weather_station'], y['cultivar'], y['soil'], y['start'], y['end'], d['measure'], d['avg'], d['min'], d['max'],d['sd'],d['conf_lower'],d['conf_upper']))
+                        df = df.append(pd.Series([w['weather_station'], y['cultivar'], y['soil'], y['start'], y['end'], d['measure'], d['avg'], d['min'], d['max'],d['sd'],d['conf_lower'],d['conf_upper']]), ignore_index=True)
             if df.shape[0] > 0:
                 df.columns = ["ws_id", "cu_id", "so_id", "start", "end", "measure", "avg", "min", "max", "sd", "conf_lower","conf_upper"]
                 return df

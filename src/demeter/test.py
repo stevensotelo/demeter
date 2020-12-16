@@ -61,15 +61,15 @@
 #     slot_map[label] = len(slot_map)
 # print(slot_map)
 
-from mongoengine import *
-from orm.orm_demeter import *
-import datetime
+#from mongoengine import *
+#from orm.orm_demeter import *
+#import datetime
 
 #connect('dialog')
-connect('dialog', host='192.168.199.74', port=27017)
-melisa = Melisa(name = "facebook", url_post = "https://melisafb.aclimatecolombia.org/receptor", token = "Melis@Fb2020")
-melisa.save()
-print(melisa.token)
+#connect('dialog', host='192.168.199.74', port=27017)
+#melisa = Melisa(name = "facebook", url_post = "https://melisafb.aclimatecolombia.org/receptor", token = "Melis@Fb2020")
+#melisa.save()
+#print(melisa.token)
 
 # user_id = "564546"
 # user = None
@@ -90,3 +90,70 @@ print(melisa.token)
 # chat.slots = utterance["slots"]
 # chat.save() 
 # print(chat)
+
+
+def decode_predictions(text, tokenizer, intent_names, slot_names,
+                       intent_id, slot_ids):
+    info = {"intent": intent_names[intent_id]}
+    collected_slots = {}
+    active_slot_words = []
+    active_slot_name = None
+    for word in text.split():
+        tokens = tokenizer.tokenize(word)
+        current_word_slot_ids = slot_ids[:len(tokens)]
+        slot_ids = slot_ids[len(tokens):]
+        current_word_slot_name = slot_names[current_word_slot_ids[0]]
+        if current_word_slot_name == "O":
+            if active_slot_name:
+                collected_slots[active_slot_name] = " ".join(active_slot_words)
+                active_slot_words = []
+                active_slot_name = None
+        else:
+            # Naive BIO: handling: treat B- and I- the same...
+            new_slot_name = current_word_slot_name[2:]
+            if active_slot_name is None:
+                active_slot_words.append(word)
+                active_slot_name = new_slot_name
+            elif new_slot_name == active_slot_name:
+                active_slot_words.append(word)
+            else:
+                collected_slots[active_slot_name] = " ".join(active_slot_words)
+                active_slot_words = [word]
+                active_slot_name = new_slot_name
+    if active_slot_name:
+        collected_slots[active_slot_name] = " ".join(active_slot_words)
+    info["slots"] = collected_slots
+    return info
+
+def nlu(text, tokenizer, my_model, intent_names, slot_names):
+    inputs = tf.constant(tokenizer.encode(text))[None, :]  # batch_size = 1
+    outputs = my_model(inputs)
+    slot_logits, intent_logits = outputs
+    print(slot_logits.numpy())
+    slot_ids = slot_logits.numpy().argmax(axis=-1)[0, 1:-1]
+    print(slot_ids)
+    intent_id = intent_logits.numpy().argmax(axis=-1)[0]
+
+    return decode_predictions(text, tokenizer, intent_names, slot_names,
+                              intent_id, slot_ids)
+
+from transformers import BertTokenizer
+import tensorflow as tf
+from tensorflow import keras
+
+tokenizer = BertTokenizer.from_pretrained("bert-base-multilingual-cased")
+#model2 = tf.saved_model.load("/home/hsotelo/demeter/model/demeter_model")
+model2 = tf.keras.models.load_model("/home/hsotelo/demeter/model/demeter_model")
+intent_names = ['forecast_yield','forecast_precipitation', 'climatology', 'cultivars', 'places', 'forecast_date']
+intent_map = dict((label, idx) for idx, label in enumerate(intent_names))
+slot_names = ["[PAD]"]
+slot_names += ["B-crop","B-cultivar","I-cultivar","B-locality","I-locality","B-measure","I-measure","B-date","I-date","B-unit","I-unit","O"]
+slot_map = {}
+for label in slot_names:
+    slot_map[label] = len(slot_map)
+
+oraciones = ["Cual es la mejor variedad para sembrar en Tolima", "climatologia en ibague", "lluvias en tolima", "mejor cultivar de arroz en Cerete"]
+for o in oraciones:
+    print(o)
+    #print(model2.predict(o))
+    print(nlu(o,tokenizer, model2, intent_map, slot_map))

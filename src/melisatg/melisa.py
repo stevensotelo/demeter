@@ -65,6 +65,7 @@ def receptor():
         for m in messages:
             if first:
                 bot.sendMessage(chat_id=sender_id, text=m, reply_to_message_id=chat_id)
+                first = False
             else:
                 bot.sendMessage(chat_id=sender_id, text=m)
     return 'ok'

@@ -40,6 +40,12 @@ class Forecast(Enum):
     YIELD_PERFORMANCE = 2
     YIELD_DATE = 3
 
+class Commands(Enum):
+    HI = 1
+    HELP = 2
+    BYE = 3
+    THANKS = 4
+
 class Error(Enum):
     MISSING_ENTITIES = 0
     MISSING_GEOGRAPHIC = 1
