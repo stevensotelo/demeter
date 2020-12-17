@@ -29,22 +29,25 @@ def webhook():
         return 'Unable to authorise.'
     else:
         data = request.get_json()        
-        for entry in data['entry']:
-            for message in entry['messaging']:
-                if message.get('message'):
-                    sender_id = message['sender']['id']
-                    if message['message'].get('text'):
-                        text = message['message'].get('text')
-                        url = DEMETER_URL + "?melisa=" + MELISA_NAME + "&token=" + TOKEN_DEMETER + "&user=" + sender_id + "&message=" + text
-                        requests.get(url)
-                    else:
-                        request_body = {
-                                'recipient': {
-                                    'id': sender_id
-                                },
-                                'message': {"text":"Hola, lo sentimos no podemos procesar tu mensaje. Intenta solamente con texto"}
-                            }
-                        requests.post('https://graph.facebook.com/v9.0/me/messages?access_token='+TOKEN,json=request_body)
+        try:
+            for entry in data['entry']:
+                for message in entry['messaging']:
+                    if message.get('message'):
+                        sender_id = message['sender']['id']
+                        if message['message'].get('text'):
+                            text = message['message'].get('text')
+                            url = DEMETER_URL + "?melisa=" + MELISA_NAME + "&token=" + TOKEN_DEMETER + "&user=" + sender_id + "&message=" + text
+                            requests.get(url, timeout=1)
+                        else:
+                            request_body = {
+                                    'recipient': {
+                                        'id': sender_id
+                                    },
+                                    'message': {"text":"Hola, lo sentimos no podemos procesar tu mensaje. Intenta solamente con texto"}
+                                }
+                            requests.post('https://graph.facebook.com/v9.0/me/messages?access_token='+TOKEN,json=request_body)
+        except Exception:
+            return 'ok'
     return 'ok'
 
 @app.route("/receptor", methods=['POST'])

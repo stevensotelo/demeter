@@ -47,9 +47,9 @@ def respond():
         text = re.sub(r"\W", "_", text)
         if text != "/start":
             url = DEMETER_URL + "?melisa=" + MELISA_NAME + "&token=" + TOKEN_DEMETER + "&user=" + sender_id + "&chat_id=" + ext_id + "&message=" + text
-            requests.get(url)
+            requests.get(url, timeout=1)
     except Exception:
-        bot.sendMessage(chat_id=sender_id, text="Lo siento, tengo un problema procesando tu mensaje", reply_to_message_id=ext_id)
+        return 'ok'
 
     return 'ok'
 
