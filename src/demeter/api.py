@@ -73,12 +73,12 @@ def api_query():
             print(message)
             answer = []
             # Check some especial words
-            if message.startswith(("hola", "hi", "Hola", "HOLA")) :
+            if message.startswith(("hola", "hi", "Hola", "HOLA")) :                
                 answer.append(NER(Commands.HI))
                 chat.intent_id = 6
                 chat.intent_name = "hi"
                 chat.slots = {}
-                chat.save()            
+                chat.save()
             elif message.startswith(("bye", "adios", "Bye", "BYE", "ADIOS")):
                 answer.append(NER(Commands.BYE))
                 chat.intent_id = 7
@@ -130,19 +130,20 @@ def api_query():
             answers += ["En estos momentos estoy aprendiendo a responder a tus preguntas, por favor ayúdame a mejorar con esta encuesta: https://demeter.paperform.co/?4ctj8=" + str(chat.pk)]
             request_body = {"user_id": user_id, "token": melisa.token, "chat_id":chat_id, "text": answers}
             response = requests.post(melisa.url_post,json=request_body)
+            print("Message sent")
             return 'ok'
         else:
             return "ERROR 2"
 
 if __name__ == "__main__":
     # It starts the model for NLU
-    nlu_o  = NLUTasks(model_path = "/home/hsotelo/demeter/model/demeter_model", params_path = "/home/hsotelo/demeter/bot/vocab")    
+    nlu_o  = NLUTasks(model_path = "/home/hsotelo/demeter/demeter", params_path = "/home/hsotelo/demeter/service/vocab")    
     # Connect with database
     #connect('mongodb://dialog:56456@localhost:27017/dialog')
     #connect('dialog')
     connect('dialog', host='192.168.199.74', port=27017)
-    
+    print("Connected")
     #app.run(threaded=True, port=5000)
-    app.run(host='0.0.0.0', port=8080)
+    app.run(host='0.0.0.0', port=3000)
 
 # nohup python api.py > demeter.log 2>&1 &

@@ -1,0 +1,4 @@
+requests==2.24.0
+flask==1.1.2
+flask-rest-api==0.17.0
+python-telegram-bot==13.7

@@ -91,9 +91,30 @@
 # chat.save() 
 # print(chat)
 
+from transformers import BertTokenizer
+import tensorflow as tf
+from tensorflow import keras
+from nlu.nlu_tasks import NLUTasks
+from nlu.enums import Intent, Geographic, Cultivars, Commands
 
-def decode_predictions(text, tokenizer, intent_names, slot_names,
-                       intent_id, slot_ids):
+"""
+print("Loading tokenizer")
+tokenizer = BertTokenizer.from_pretrained("bert-base-multilingual-cased")
+print("Loading model")
+model2 = tf.saved_model.load("/home/hsotelo/demeter/demeter")
+
+
+print("Loading preparing all")
+
+intent_names = ['forecast_yield','forecast_precipitation', 'climatology', 'cultivars', 'places', 'forecast_date']
+intent_map = dict((label, idx) for idx, label in enumerate(intent_names))
+slot_names = ["[PAD]"]
+slot_names += ["B-crop","B-cultivar","I-cultivar","B-locality","I-locality","B-measure","I-measure","B-date","I-date","B-unit","I-unit","O"]
+slot_map = {}
+for label in slot_names:
+    slot_map[label] = len(slot_map)
+
+def decode_predictions(text, tokenizer, intent_names, slot_names,intent_id, slot_ids):
     info = {"intent": intent_names[intent_id]}
     collected_slots = {}
     active_slot_words = []
@@ -129,31 +150,20 @@ def nlu(text, tokenizer, my_model, intent_names, slot_names):
     inputs = tf.constant(tokenizer.encode(text))[None, :]  # batch_size = 1
     outputs = my_model(inputs)
     slot_logits, intent_logits = outputs
-    print(slot_logits.numpy())
+    #print(slot_logits.numpy())
     slot_ids = slot_logits.numpy().argmax(axis=-1)[0, 1:-1]
-    print(slot_ids)
+    #print(slot_ids)
     intent_id = intent_logits.numpy().argmax(axis=-1)[0]
 
-    return decode_predictions(text, tokenizer, intent_names, slot_names,
-                              intent_id, slot_ids)
+    return decode_predictions(text, tokenizer, intent_names, slot_names,intent_id, slot_ids)
+"""
 
-from transformers import BertTokenizer
-import tensorflow as tf
-from tensorflow import keras
-
-tokenizer = BertTokenizer.from_pretrained("bert-base-multilingual-cased")
-#model2 = tf.saved_model.load("/home/hsotelo/demeter/model/demeter_model")
-model2 = tf.keras.models.load_model("/home/hsotelo/demeter/model/demeter_model")
-intent_names = ['forecast_yield','forecast_precipitation', 'climatology', 'cultivars', 'places', 'forecast_date']
-intent_map = dict((label, idx) for idx, label in enumerate(intent_names))
-slot_names = ["[PAD]"]
-slot_names += ["B-crop","B-cultivar","I-cultivar","B-locality","I-locality","B-measure","I-measure","B-date","I-date","B-unit","I-unit","O"]
-slot_map = {}
-for label in slot_names:
-    slot_map[label] = len(slot_map)
+print("Loading model")
+nlu  = NLUTasks(model_path = "/home/hsotelo/demeter/demeter", params_path = "/home/hsotelo/demeter/service/vocab")    
 
 oraciones = ["Cual es la mejor variedad para sembrar en Tolima", "climatologia en ibague", "lluvias en tolima", "mejor cultivar de arroz en Cerete"]
 for o in oraciones:
     print(o)
-    #print(model2.predict(o))
-    print(nlu(o,tokenizer, model2, intent_map, slot_map))
+    #print(model2.predict(o))    
+    #print(nlu(o,tokenizer, model2, intent_names, slot_names))
+    print(nlu.nlu(o))

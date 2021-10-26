@@ -5,7 +5,8 @@ import telegram
 
 app = Flask(__name__)
 
-FOLDER_APP = "/home/hsotelo/melisatg/"
+FOLDER_APP = "/home/hsotelo/melisa/telegram/"
+#FOLDER_APP = "/home/hsotelo/melisatg/"
 #FOLDER_APP = "G:\\Me\\Code\\UOC\\TFM\\demeter\\src\\facebook_client\\"
 #FOLDER_APP = "/app/"
 FILE_TOKEN = FOLDER_APP + "token.txt"
@@ -77,7 +78,8 @@ if __name__ == '__main__':
     bot = telegram.Bot(token=TOKEN)
 
     #app.run(threaded=True, port=5000)
-    app.run(host='0.0.0.0', port=81)
+    app.run(threaded=True, port=5001)
+    print("Start server on PORT 5001")
 
 # Run in background
-# nohup python3.8 melisa.py > melisa.log 2>&1 &
+# nohup python3 melisa.py > melisa.log 2>&1 &

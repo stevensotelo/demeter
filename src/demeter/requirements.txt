@@ -1,0 +1,8 @@
+requests==2.24.0
+flask==1.1.2
+flask-rest-api==0.17.0
+mongoengine==0.21.0
+pandas==0.25.1
+pymongo==3.11.2
+tensorflow-gpu==2.6.0
+transformers==4.11.3

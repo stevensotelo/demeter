@@ -3,7 +3,8 @@ import datetime
 from flask import Flask, request
 app = Flask(__name__)
 
-FOLDER_APP = "/home/hsotelo/melisafb/"
+FOLDER_APP = "/home/hsotelo/melisa/facebook/"
+#FOLDER_APP = "/home/hsotelo/melisafb/"
 #FOLDER_APP = "G:\\Me\\Code\\UOC\\TFM\\demeter\\src\\facebook_client\\"
 #FOLDER_APP = "/app/"
 FILE_TOKEN = FOLDER_APP + "token.txt"
@@ -74,8 +75,10 @@ if __name__ == "__main__":
     with open(FILE_TOKEN_DEMETER, "r") as f:
         TOKEN_DEMETER = f.read()
     
-    #app.run(threaded=True, port=5000)
-    app.run(host='0.0.0.0', port=5000)
+    app.run(threaded=True, port=5000)
+    #app.run(host='0.0.0.0', port=8080)
+    print("Start server on PORT 5000")
 
 # Run in background
 # nohup python3.8 melisa.py > melisa.log 2>&1 &
+# nohup python3 melisa.py > melisa.log 2>&1 &
