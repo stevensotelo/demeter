@@ -14,6 +14,8 @@ src/Python/__pycache__
 /src/melisafb/token_demeter.txt
 /src/melisatg/token.txt
 /src/melisatg/token_demeter.txt
+/src/melisafb_node/node_modules
+/src/melisafb_node/conf.json
 
 # Data
 /data/survey/FAQ.xlsx

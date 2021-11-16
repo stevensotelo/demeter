@@ -1,0 +1,30 @@
+{
+  "name": "melisa-facebook",
+  "version": "2.0.0",
+  "description": "Melisa webhook for Facebook Messenger base on quick start tutorial.",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "dependencies": {
+    "axios": "^0.24.0",
+    "body-parser": "^1.19.0",
+    "dotenv": "^6.2.0",
+    "express": "^4.17.1",
+    "request": "^2.88.2"
+  },
+  "engines": {
+    "node": ">=10.x"
+  },
+  "repository": {
+    "url": ""
+  },
+  "author": "Steven Sotelo",
+  "license": "ISC",
+  "keywords": [
+    "messenger",
+    "webhook",
+    "melisa",
+    "demeter"
+  ]
+}
