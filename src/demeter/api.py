@@ -41,12 +41,12 @@ def register_melisa():
 @app.route('/api/v1/query/', methods=['GET'])
 def api_query():
     
-    # Validate autentication of melisa
+    # Validate if melisa exists into the database
     if not Melisa.objects(name=request.args.get("melisa")):
         return "ERROR 1"
     else:
         melisa = Melisa.objects.get(name=request.args.get("melisa"))
-
+        # Validate authentication
         if(melisa.token == request.args.get("token")):
             policy = PolicyManagement(aclimate)
             user = None
