@@ -107,7 +107,7 @@ class Generator():
                                     cp_cu_data = cu_ws.loc[cu_ws["cu_name"] == cu,:]
                                     m = m + cu + ": "
                                     for ccd in cp_cu_data.itertuples(index=True, name='Pandas'):
-                                        m = m + "sembrando en " + str(getattr(ccd, "start")) + ", tipo de suelo " + getattr(ccd, "so_name") + " "
+                                        m = m + "sembrando en " + str(getattr(ccd, "start"))[:-10] + ", tipo de suelo " + getattr(ccd, "so_name") + " "
                                         m = m + "puedes obtener en promedio: " + str(round(getattr(ccd, "avg"),2)) + " kg/ha, "
                                         m = m + "variando entre máx. " + str(round(getattr(ccd, "max"),2)) + " kg/ha "
                                         m = m + "y mín. " + str(round(getattr(ccd, "min"),2)) + " kg/ha. "
@@ -126,7 +126,7 @@ class Generator():
                                 #msg.append(m)
                                 for ccd in cp_ws.itertuples(index=True, name='Pandas'):
                                     m = m + "la variedad " + getattr(ccd, "cu_name") + ", en un suelo " +  getattr(ccd, "so_name") + " "
-                                    m = m + "y sembrando en " + str(getattr(ccd, "start")) + " "
+                                    m = m + "y sembrando en " + str(getattr(ccd, "start"))[:-10] + " "
                                     m = m + " puedes obtener en promedio: " + str(round(getattr(ccd, "avg"),2)) + " kg/ha. "
                                     #m = m + " variando con máx. de: " + str(round(getattr(ccd, "max"),2)) + " kg/ha"
                                     #m = m + " y un mín. de: " + str(round(getattr(ccd, "min"),2)) + " kg/ha"
