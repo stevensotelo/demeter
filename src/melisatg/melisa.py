@@ -16,10 +16,10 @@ with open(FILE_TOKEN, "r") as f:
     TOKEN = f.read()
 MELISA_NAME = "telegram"
 TOKEN_DEMETER = ""
-DEMETER_URL = "https://demeter.aclimatecolombia.org/api/v1/query"
+DEMETER_URL = "https://demeter.aclimate.org/api/v1/query"
 
-URL = "https://melisatg.aclimatecolombia.org"
-BOT_USER_NAME = "MelisaDAbot"
+URL = "https://melisatg.aclimate.org/"
+BOT_USER_NAME = "Melisa_chatbot"
 bot = None
 
 @app.route('/')
@@ -78,7 +78,7 @@ if __name__ == '__main__':
     bot = telegram.Bot(token=TOKEN)
 
     #app.run(threaded=True, port=5000)
-    app.run(threaded=True, port=5001)
+    app.run(host='0.0.0.0', port=5001)
     print("Start server on PORT 5001")
 
 # Run in background

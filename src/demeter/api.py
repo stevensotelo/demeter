@@ -19,7 +19,7 @@ import datetime
 app = flask.Flask(__name__)
 
 nlu_o = None
-aclimate = "https://pronosticosapi.aclimatecolombia.org/api/"
+aclimate = "https://webapi.aclimate.org/api/"
 
 # Home page
 @app.route('/', methods=['GET'])
