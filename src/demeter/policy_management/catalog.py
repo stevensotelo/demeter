@@ -9,10 +9,11 @@ class Catalog:
         self.headers = headers
     
     # Method that search all geographic locations in the aclimate platform
+    # (string) countries: String with the countries
     # return: None if couldn't connect with the service, Otherwise a DataFrame with the data 
-    def get_Geographic(self):
+    def get_Geographic(self,countries):
         # Set the url for getting data
-        api_url = '{0}Geographic/json'.format(self.url_base)
+        api_url = '{0}Geographic/{1}/json'.format(self.url_base,countries)
         # Send the request to the web api
         response = requests.get(api_url, headers=self.headers, verify=False)        
         if response.status_code == 200: 

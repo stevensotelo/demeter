@@ -7,8 +7,9 @@ from policy_management.ner import NER
 
 class PolicyManagement:
 
-    def __init__(self, url):
-        self.url_base = url        
+    def __init__(self, url, countries):
+        self.url_base = url
+        self.countries = countries
         self.headers = {'Content-Type': 'application/json'}
         self.catalog = Catalog(url, self.headers)
         self.forecast = ForecastData(url, self.headers)
@@ -18,7 +19,7 @@ class PolicyManagement:
     # (dataframe) entities: List of entities found in the message user
     def geographic(self, entities):
         answer = []
-        data = self.catalog.get_Geographic() 
+        data = self.catalog.get_Geographic(self.countries)
         # Check if could connect with aclimate
         if data is None:
             answer.append(NER(Error.ERROR_ACLIMATE))
@@ -26,9 +27,9 @@ class PolicyManagement:
             # Entities weren't found
             if (len(entities) == 0):
                 answer.append(NER(Geographic.STATE, data.loc[:,"state_name"].unique()))
-            else:            
-                # This section adds the list of localities  
-                l = entities["locality"]                    
+            else:
+                # This section adds the list of localities
+                l = entities["locality"]
                 e_data = data.loc[data["state_name"].str.contains(l.lower(), case = False), :]
                 # Check if the message has state name in order to send the municipalities
                 if(e_data.shape[0] > 0):

@@ -20,8 +20,10 @@ class Generator():
                     elif(a.type == Commands.HELP):
                         msg.append("Puedes preguntarme sobre información histórica de clima, también sobre predicción de clima y producción de cultivos")
                         msg.append("Si quieres saber que localidades hay disponibles podrías preguntar algo como: Municipios disponibles")
-                        msg.append("Si quieres saber sobre que cultivos hay disponibles: ¿Qué cultivos hay disponibles?")
-                        msg.append("Yo intentaré identificar que información es la que necesitas y te daré una respuesta sobre ese tema")
+                        msg.append("Si quieres saber sobre que cultivos hay disponibles, podrías intentar algo como: ¿Qué cultivos hay disponibles?")
+                        msg.append("Si quieres saber sobre como será el clima para la próxima temporada, podrías intentar algo como: ¿Cuál es el pronóstico climático para Palmira?")
+                        msg.append("Si quieres saber sobre como será el rendimiento de algún cultivo, podrías intentar algo como: ¿Cuál es la predicción de rendimiento para maíz en Cerete?")
+                        msg.append("Tranquil@, pregunta como quieras, Yo estoy para ayudarte")
                     else:
                         msg.append("Con mucho gusto")
                 # Geographic answers
@@ -47,13 +49,13 @@ class Generator():
                     # Climatology answers
                     if(a.type == Historical.CLIMATOLOGY):
                         # Get ws ids
-                        ws_id = a.values.loc[:,"ws_id"].unique()                        
+                        ws_id = a.values.loc[:,"ws_id"].unique()
                         for ws in ws_id:
                             # Filter by ws_id
                             cl_ws = a.values.loc[a.values["ws_id"] == ws,:]
                             m = "Para la estación " + cl_ws.iloc[0]["ws_name"] + ", la climatología es: "
                             # Get measures
-                            #msg.append(m)                            
+                            #msg.append(m)
                             cl_var = cl_ws.loc[:,"measure"].unique().tolist()
                             # Remove climatology for terciles
                             if "prec_ter_1" in cl_var:
@@ -85,8 +87,8 @@ class Generator():
                             for w in cl_ws.itertuples(index=True, name='Pandas') :
                                 m = m + "para el trimestre "
                                 m = m + Generator.get_month(getattr(w, "month")) + "-" + Generator.get_month(getattr(w, "month") + 1) + "-" + Generator.get_month(getattr(w, "month")+2) + ": " 
-                                m = m + "por encima de lo normal = " + str(round(getattr(w, "upper") * 100.0,2)) + "%, " 
-                                m = m + "por dentro de lo normal = " + str(round(getattr(w, "normal") * 100.0, 2)) + "%, " 
+                                m = m + "por encima de lo normal = " + str(round(getattr(w, "upper") * 100.0,2)) + "%, "
+                                m = m + "por dentro de lo normal = " + str(round(getattr(w, "normal") * 100.0, 2)) + "%, "
                                 m = m +"por debajo de lo normal = " + str(round(getattr(w, "lower") * 100.0,2)) + "% "
                                 #msg.append(m)
                             msg.append(m)
@@ -156,7 +158,7 @@ class Generator():
         else:
             msg.append('Lo sentimos, su consulta no pudo ser procesada, por favor intente de nuevo')
         return msg
-    
+
     # Method that return the description of measure
     # (string) var: Name of measure
     @staticmethod
@@ -169,7 +171,7 @@ class Generator():
         elif (var == "t_min"):
             a = "temperatura mínima"
         return a
-    
+
     #
     @staticmethod
     def get_climate_unit(var):

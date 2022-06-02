@@ -8,7 +8,7 @@ from nlu.enums import Intent, Slot
 class NLUTasks:
 
     def __init__(self, model_path, params_path, model_name = "bert-base-multilingual-cased"):
-        self.model_path = model_path        
+        self.model_path = model_path
         self.model_name = model_name
 
         # Load model
@@ -19,7 +19,7 @@ class NLUTasks:
         with open(os.path.join(params_path,"intents.txt") , 'r') as file_params:
             self.intent_names = file_params.read().split("\n")
         self.intent_map = dict((label, idx) for idx, label in enumerate(self.intent_names))
-        
+
         # Load Slots
         with open(os.path.join(params_path,"slots.txt") , 'r') as file_params:
             self.slot_names = file_params.read().split("\n")
