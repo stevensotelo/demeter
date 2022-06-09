@@ -53,6 +53,8 @@ app.get('/webhook', (req, res) => {
     let token = req.query['hub.verify_token'];
     let challenge = req.query['hub.challenge'];
 
+    console.log('[WEBHOOK]|CHECK|' + mode + "|" + token + "|" + challenge);
+
     // Checks if a token and mode is in the query string of the request
     if (mode && token) {
 
@@ -73,7 +75,7 @@ app.get('/webhook', (req, res) => {
 // Creates the endpoint for your webhook
 app.post('/webhook', (req, res) => {
     let body = req.body;
-
+    console.log('[WEBHOOK]|MESSAGE|' + body);
     // Checks if this is an event from a page subscription
     if (body.object === 'page') {
 
@@ -81,10 +83,10 @@ app.post('/webhook', (req, res) => {
         body.entry.forEach(function (entry) {
 
             // Gets the body of the webhook event
-            let webhookEvent = entry.messaging[0];            
+            let webhookEvent = entry.messaging[0];
 
             // Get the sender PSID
-            let senderPsid = webhookEvent.sender.id;            
+            let senderPsid = webhookEvent.sender.id;
 
             // Check if the event is a message or postback and
             // pass the event to the appropriate handler function
@@ -106,7 +108,7 @@ app.post('/webhook', (req, res) => {
 
 // Creates the endpoint for receptor
 app.post('/receptor', (req, res) => {
-    let body = req.body;    
+    let body = req.body;
     let token = body.token,
         messages = body.text,
         senderPsid = body.user_id;
@@ -115,7 +117,7 @@ app.post('/receptor', (req, res) => {
     if (token === conf.TOKEN_DEMETER) {
 
         // Iterates over each entry - there may be multiple if batched
-        messages.forEach(function (entry) {                        
+        messages.forEach(function (entry) {
             let response = { 'text': entry };
             callSendAPI(senderPsid, response);
             console.log('[RECEPTOR]|OK|' + senderPsid + "|" + entry);

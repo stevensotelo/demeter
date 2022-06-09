@@ -137,13 +137,13 @@ def api_query():
             return "ERROR 2"
 
 if __name__ == "__main__":
-    # Connect with database
-    connect(host=config['CONNECTION_DB'])
-    print("Connected DB")
-
     # It starts the model for NLU
     nlu_o  = NLUTasks(model_path = config['MODEL_PATH'], params_path = config['PARAMS_PATH'])
     print("NLU loaded")
+
+    # Connect with database
+    connect(host=config['CONNECTION_DB'])
+    print("Connected DB")
 
     if config['DEBUG']:
         app.run(threaded=True, port=config['PORT'], debug=config['DEBUG'])

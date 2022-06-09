@@ -131,17 +131,17 @@ class PolicyManagement:
         # Entities were found
         #if (len(entities) > 0):
         # Get the localities
-        geographic = self.catalog.get_Geographic()
+        geographic = self.catalog.get_Geographic(self.countries)
         if geographic is None:
             answer.append(NER(Error.ERROR_ACLIMATE))
         else:
             ws_data = pd.DataFrame()
             # Try to search if locality was reconigzed
-            if "locality" in entities.keys():                
+            if "locality" in entities.keys():
                 # This loop figure out all localtities through: states, municipalities and ws, which are into the message
                 l = entities["locality"]
                 ws_data = self.get_ws(l, geographic)
-            
+
                 # Check if the ws were found
                 if(ws_data.shape[0] > 0):
                     ws_id = ws_data["ws_id"].unique()
