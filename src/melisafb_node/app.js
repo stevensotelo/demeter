@@ -40,20 +40,29 @@ app.use(urlencoded({ extended: true }));
 // Parse application/json
 app.use(json());
 
+function log_request(req) {
+    let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    let datetime = new Date();
+    let requestMethod = req.method;
+    var fullUrl = req.protocol + '://' + req.get('host') + req.originalUrl;
+    console.log(ip + " | " + datetime.toISOString() + " | " + requestMethod + " | " + fullUrl);
+}
+
 // Respond with 'Hello World' when a GET request is made to the homepage
 app.get('/', function (_req, res) {
-    res.send('<h1>Running MelisaBot for Facebook</h1>');
+    res.send('<h1>Running MelisaBot for Meta</h1>');
 });
 
 // Adds support for GET requests to our webhook
 app.get('/webhook', (req, res) => {
+    log_request(req);
 
     // Parse the query params
     let mode = req.query['hub.mode'];
     let token = req.query['hub.verify_token'];
     let challenge = req.query['hub.challenge'];
 
-    console.log('[WEBHOOK]|CHECK|' + mode + "|" + token + "|" + challenge);
+    console.log('WEBHOOK | CHECK |' + mode + " | " + token + " | " + challenge);
 
     // Checks if a token and mode is in the query string of the request
     if (mode && token) {
@@ -74,141 +83,122 @@ app.get('/webhook', (req, res) => {
 
 // Creates the endpoint for your webhook
 app.post('/webhook', (req, res) => {
+    log_request(req);
     let body = req.body;
-    console.log('[WEBHOOK]|MESSAGE|' + body);
-    // Checks if this is an event from a page subscription
-    if (body.object === 'page') {
+    console.log('WEBHOOK | MESSAGE | ' + JSON.stringify(body));
+    // Iterates over each entry - there may be multiple if batched
 
-        // Iterates over each entry - there may be multiple if batched
-        body.entry.forEach(function (entry) {
-
+    body.entry.forEach(function (entry) {
+        var senderPsid = "",
+            message = "",
+            user_tags = {},
+            message_tags = {};
+        // Checks if this is an event from a page subscription
+        if (body.object === 'page') {
+            user_tags = { service: "facebook" };
             // Gets the body of the webhook event
             let webhookEvent = entry.messaging[0];
-
-            // Get the sender PSID
-            let senderPsid = webhookEvent.sender.id;
-
+            // Get the id sender
+            senderPsid = webhookEvent.sender.id;
             // Check if the event is a message or postback and
             // pass the event to the appropriate handler function
-            if (webhookEvent.message) {
-                handleMessage(senderPsid, webhookEvent.message);
-            } else if (webhookEvent.postback) {
-                handlePostback(senderPsid, webhookEvent.postback);
+            if (webhookEvent.message && webhookEvent.message.text) {
+                message = webhookEvent.message.text;
             }
-        });
+        }
+        else if (body.object === 'whatsapp_business_account') {
+            let webhookEvent = entry.changes[0].value;
 
-        // Returns a '200 OK' response to all requests
-        res.status(200).send('EVENT_RECEIVED');
-    } else {
+            user_tags = {
+                service: "whatsapp",
+                wp_id: entry.id,
+                phone: webhookEvent.metadata.display_phone_number,
+                phone_id: webhookEvent.metadata.phone_number_id
+            };
 
-        // Returns a '404 Not Found' if event is not from a page subscription
-        res.sendStatus(404);
-    }
-});
-
-// Creates the endpoint for receptor
-app.post('/receptor', (req, res) => {
-    let body = req.body;
-    let token = body.token,
-        messages = body.text,
-        senderPsid = body.user_id;
-
-    // Checks if this is an event from a page subscription
-    if (token === conf.TOKEN_DEMETER) {
-
-        // Iterates over each entry - there may be multiple if batched
-        messages.forEach(function (entry) {
-            let response = { 'text': entry };
-            callSendAPI(senderPsid, response);
-            console.log('[RECEPTOR]|OK|' + senderPsid + "|" + entry);
-        });
-
-        // Returns a '200 OK' response to all requests
-        res.status(200).send('EVENT_RECEIVED');
-    } else {
-
-        // Returns a '404 Not Found' if event is not from a page subscription
-        res.sendStatus(404);
-    }
+            // Check if contact exists
+            if (webhookEvent.contacts && webhookEvent.contacts[0].profile) {
+                user_tags.name = webhookEvent.contacts[0].profile.name;
+            }
+            // Check if message comes in the request
+            if (webhookEvent.messages && webhookEvent.messages[0].text) {
+                // Get the id sender
+                senderPsid = webhookEvent.messages[0].from;
+                message = webhookEvent.messages[0].text.body;
+                message_tags = {
+                    wp_id: webhookEvent.metadata.phone_number_id
+                }
+            }
+        }
+        // Send
+        SendRequestDemeter(senderPsid, message, user_tags, message_tags);
+    });
+    // Returns a '200 OK' response to all requests
+    res.status(200).send('EVENT_RECEIVED');
 });
 
 
 // Handles messages events
-function handleMessage(senderPsid, receivedMessage) {
-    let response;
+function SendRequestDemeter(senderPsid, message, user_tags, message_tags) {
 
-    // Checks if the message contains text
-    if (receivedMessage.text) {
-        console.log('[WEBHOOK]|OK|' + senderPsid + '|' + receivedMessage.text);
-        // Create the payload for a basic text message, which
-        // will be added to the body of your request to the Send API
-        response = {
-            //'text': `You sent the message: '${receivedMessage.text}'. Now send me an attachment!`
-            'text':"Hemos recibido tu mensaje, en poco te enviaremos la información"
-        };
+    console.log('WEBHOOK | REQUEST | ' + senderPsid + ' | ' + message + " | " + user_tags + " | " + message_tags);
+    // Create the payload for a basic text message, which
+    let json = {
+        melisa: conf.MELISA_NAME,
+        token: conf.TOKEN_DEMETER,
+        user: senderPsid,
+        message: message,
+        user_tags: user_tags,
+        message_tags: message_tags
+    }
+    request({
+        'uri': conf.DEMETER_URL,
+        'method': 'POST',
+        'json': json
+    }, (err, _res, _body) => {
+        if (!err) {
+            console.log('WEBHOOK | RESPONSE |' + _res);
+        } else {
+            console.log('WEBHOOK | ERROR |' + err);
+        }
+    });
+}
 
-        let url = conf.DEMETER_URL + "?melisa=" + conf.MELISA_NAME + "&token=" + conf.TOKEN_DEMETER + "&user=" + senderPsid + "&message=" + receivedMessage.text;
-        axios.get(url)
-            .then(response => {
-                console.log('[WEBHOOK]|DEMETER|' + response.data);
-            })
-            .catch(error => {
-                console.log('[WEBHOOK]|ERROR|' + error);
-            });
-    } else if (receivedMessage.attachments) {
+// Creates the endpoint for receptor
+app.post('/receptor', (req, res) => {
+    log_request(req);
+    let body = req.body;
+    let token = body.token,
+        messages = body.text,
+        senderPsid = body.user_id;
+    // Checks if this is an event from a page subscription
+    if (token === conf.TOKEN_DEMETER) {
 
-        // Get the URL of the message attachment
-        let attachmentUrl = receivedMessage.attachments[0].payload.url;
-        response = {
-            'attachment': {
-                'type': 'template',
-                'payload': {
-                    'template_type': 'generic',
-                    'elements': [{
-                        'title': 'Is this the right picture?',
-                        'subtitle': 'Tap a button to answer.',
-                        'image_url': attachmentUrl,
-                        'buttons': [
-                            {
-                                'type': 'postback',
-                                'title': 'Yes!',
-                                'payload': 'yes',
-                            },
-                            {
-                                'type': 'postback',
-                                'title': 'No!',
-                                'payload': 'no',
-                            }
-                        ],
-                    }]
+        // Iterates over each entry - there may be multiple if batched
+        messages.forEach(function (message) {
+            if (message != "") {
+                let response = { 'text': message };
+                if (body.message_tags && body.message_tags.wp_id) {
+                    callSendAPIWhatsapp(senderPsid, response, body.message_tags.wp_id)
+                }
+                else {
+                    callSendAPIFacebook(senderPsid, response);
                 }
             }
-        };
+        });
+
+        // Returns a '200 OK' response to all requests
+        res.status(200).send('EVENT_RECEIVED');
+    } else {
+
+        // Returns a '404 Not Found' if event is not from a page subscription
+        res.sendStatus(404);
     }
+});
 
-    // Send the response message
-    //callSendAPI(senderPsid, response);
-}
-
-// Handles messaging_postbacks events
-function handlePostback(senderPsid, receivedPostback) {
-    let response;
-
-    // Get the payload for the postback
-    let payload = receivedPostback.payload;
-
-    // Set the response based on the postback payload
-    if (payload === 'yes') {
-        response = { 'text': 'Thanks!' };
-    } else if (payload === 'no') {
-        response = { 'text': 'Oops, try sending another image.' };
-    }
-    // Send the message to acknowledge the postback
-    callSendAPI(senderPsid, response);
-}
 
 // Sends response messages via the Send API
-function callSendAPI(senderPsid, response) {
+function callSendAPIFacebook(senderPsid, response) {
 
     // Construct the message body
     let requestBody = {
@@ -226,16 +216,39 @@ function callSendAPI(senderPsid, response) {
         'json': requestBody
     }, (err, _res, _body) => {
         if (!err) {
-            console.log('Message sent!');
+            console.log('Message sent to FACEBOOK!');
         } else {
-            console.error('Unable to send message:' + err);
+            console.error('Unable to send message FACEBOOK:' + err);
+        }
+    });
+}
+
+function callSendAPIWhatsapp(senderPsid, response, from) {
+    const json = {
+        "messaging_product": "whatsapp",
+        "recipient_type": "individual",
+        "to": senderPsid,
+        "type": "text",
+        "text": { "preview_url": false, "body": response.text }
+    };
+
+    request({
+        'uri': 'https://graph.facebook.com/v13.0/' + from + '/messages',
+        'qs': { 'access_token': conf.PAGE_ACCESS_TOKEN },
+        'method': 'POST',
+        'json': json
+    }, (err, _res, _body) => {
+        if (!err) {
+            console.log('Message sent WHATSAPP!');
+        } else {
+            console.error('Unable to send message WHATSAPP:' + err);
         }
     });
 }
 
 // listen for requests :)
 var listener = app.listen(conf.PORT, conf.HOSTNAME, function () {
-    console.log('Your app is listening on port ' + listener.address().port);
+    console.log('Melisa is listening on port ' + listener.address().port);
 });
 
 // nohup npm start > melisa.log 2>&1 &

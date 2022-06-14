@@ -81,7 +81,7 @@ class PolicyManagement:
         # Entities were found
         #if (len(entities) > 0):
         # Get the localities
-        geographic = self.catalog.get_Geographic()
+        geographic = self.catalog.get_Geographic(self.countries)
         if geographic is None:
             answer.append(NER(Error.ERROR_ACLIMATE))
         else:
@@ -168,7 +168,7 @@ class PolicyManagement:
         # Entities were found
         #if (len(entities) > 0):            
         # Get the localities
-        geographic = self.catalog.get_Geographic()
+        geographic = self.catalog.get_Geographic(self.countries)
         cultivars = self.catalog.get_Cultivars()
         soils = self.catalog.get_Soils()
         if geographic is None or cultivars is None or soils is None:

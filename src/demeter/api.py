@@ -1,9 +1,10 @@
 import flask
-from flask import request
+from flask import request,Response
 import requests
 from mongoengine import *
 from orm.orm_demeter import *
 import datetime
+from flask_cors import cross_origin
 
 from nlu.enums import Intent, Commands
 from nlu.nlu_tasks import NLUTasks
@@ -26,7 +27,7 @@ def home():
 @app.route('/api/v1/melisa/', methods=['GET'])
 def register_melisa():
     if config['ENABLE_REGISTER_MELISA']:
-        name = request.args.get("name")    
+        name = request.args.get("name")
         if not Melisa.objects(name=name) :
             melisa = Melisa(name = name, url_post = request.args.get("url_post"), token = request.args.get("token"))
             melisa.save()
@@ -37,104 +38,115 @@ def register_melisa():
         return "Not enable"
 
 # A route to return all of the available entries in our catalog.
-@app.route('/api/v1/query/', methods=['GET'])
+#@app.route('/api/v1/query/', methods=['GET'])
+@app.route('/api/v1/query/', methods=['POST'])
+@cross_origin()
 def api_query():
-    # Validate if melisa exists into the database
+    data = request.get_json()
+    melisa_name = data["melisa"]
+    melisa_token = data["token"]
     say_wait = True
-    if not Melisa.objects(name=request.args.get("melisa")):
-        return "ERROR 1"
+    say_hi = True
+    # Validate if melisa exists into the database
+    #if not Melisa.objects(name=request.args.get("melisa")):
+    if not Melisa.objects(name=melisa_name):
+        return Response("Melisa unknown",400)
     else:
-        melisa = Melisa.objects.get(name=request.args.get("melisa"))
+        melisa = Melisa.objects.get(name=melisa_name)
         # Validate authentication
-        if(melisa.token == request.args.get("token")):
+        #if(melisa.token == request.args.get("token")):
+        if(melisa.token == melisa_token):
             policy = PolicyManagement(config["ACLIMATE_API"],config["COUNTRIES"])
             user = None
-            user_id = request.args.get("user")
-            message = request.args.get("message")
-            chat_id = ""
-            if request.args.get("chat_id"):
-                chat_id = request.args.get("chat_id")
+            user_id = data["user"]
+            message = data["message"]
+            message_tags = data["message_tags"] if "message_tags" in data else {}
+            chat_id = data["chat_id"] if "chat_id" in  data else ""
+            user_tags = data["user_tags"]  if "user_tags" in data else {}
+
             # Check if user exists, otherwise it will create
             if not User.objects(user_id=user_id):
-                user = User(melisa = melisa, user_id = user_id)
+                user = User(melisa = melisa, user_id = user_id, tags=user_tags)
                 user.save()
-                request_body = {"user_id": user_id, "token": melisa.token, "chat_id":chat_id, "text": ["Hola, soy Melisa, un bot que provee información agroclimática.","Si no sabes como iniciar y necesitas ayuda solo escribeme: ayuda"]}
+                request_body = {"user_id": user_id, "token": melisa.token, "message_tags":message_tags, "chat_id":chat_id, "text": ["Hola, soy Melisa, un bot que provee información agroclimática. Si no sabes como iniciar y necesitas ayuda solo escribeme: ayuda"]}
                 say_wait = False
+                say_hi = False
                 response = requests.post(melisa.url_post,json=request_body)
             else:
                 user = User.objects.get(user_id=user_id)
 
-            # Create chat
-            chat = Chat(user = user, text = message, date = datetime.datetime.now(), ext_id = chat_id)
-            chat.save()
-
             # message
             message = message.replace("_"," ")
             print(message)
-            answer = []
-            # Check some especial words
-            if message.startswith(("hola", "hi", "Hola", "HOLA")) :
-                answer.append(NER(Commands.HI))
-                chat.intent_id = 6
-                chat.intent_name = "hi"
-                chat.slots = {}
-                chat.save()
-            elif message.startswith(("bye", "adios", "Bye", "BYE", "ADIOS", "chao")):
-                answer.append(NER(Commands.BYE))
-                chat.intent_id = 7
-                chat.intent_name = "bye"
-                chat.slots = {}
-                chat.save()
-            elif message.startswith(("help","ayuda","Help", "HELP", "Ayuda", "Ayuda")):
-                answer.append(NER(Commands.HELP))
-                chat.intent_id = 8
-                chat.intent_name = "help"
-                chat.slots = {}
-                chat.save()
-            elif "thanks" in message or "gracias" in message:
-                answer.append(NER(Commands.THANKS))
-                chat.intent_id = 9
-                chat.intent_name = "thanks"
-                chat.slots = {}
-                chat.save()
-            else:
-                # Temporal message
-                if say_wait:
-                    rb_tmp = {"user_id": user_id, "token": melisa.token, "chat_id":chat_id, "text": ["Estoy procesando tu pregunta"]}
-                    response = requests.post(melisa.url_post,json=rb_tmp)
-                # Decoded message
-                utterance = nlu_o.nlu(message)
-                print(utterance)
-                # Update chat
-                chat.intent_id = utterance["intent"]
-                chat.intent_name = utterance["name"]
-                chat.slots = utterance["slots"]
+            if message:
+                # Create chat
+                chat = Chat(user = user, text = message, date = datetime.datetime.now(), ext_id = chat_id, tags=message_tags)
                 chat.save()
 
-                intent = Intent(utterance["intent"])
-                entities = utterance["slots"]
+                answer = []
+                # Check some especial words
+                if message.lower().startswith(("hola", "hi")) and say_hi:
+                    answer.append(NER(Commands.HI))
+                    chat.intent_id = 6
+                    chat.intent_name = "hi"
+                    chat.slots = {}
+                    chat.save()
+                elif message.lower().startswith(("bye", "adios", "chao")):
+                    answer.append(NER(Commands.BYE))
+                    chat.intent_id = 7
+                    chat.intent_name = "bye"
+                    chat.slots = {}
+                    chat.save()
+                elif message.lower().startswith(("help","ayuda","command", "comando")):
+                    answer.append(NER(Commands.HELP))
+                    chat.intent_id = 8
+                    chat.intent_name = "help"
+                    chat.slots = {}
+                    chat.save()
+                elif message.lower().startswith(("thank","gracias")):
+                    answer.append(NER(Commands.THANKS))
+                    chat.intent_id = 9
+                    chat.intent_name = "thanks"
+                    chat.slots = {}
+                    chat.save()
+                else:
+                    # Temporal message
+                    if say_wait:
+                        rb_tmp = {"user_id": user_id, "token": melisa.token, "message_tags":message_tags, "chat_id":chat_id, "text": ["Estoy buscando la información solicitada"]}
+                        response = requests.post(melisa.url_post,json=rb_tmp)
+                    # Se revisa que diga hola este en true, sino quiere decir que este es un saludo inicial
+                    if say_hi:
+                        # Decoded message
+                        utterance = nlu_o.nlu(message)
+                        print(utterance)
+                        # Update chat
+                        chat.intent_id = utterance["intent"]
+                        chat.intent_name = utterance["name"]
+                        chat.slots = utterance["slots"]
+                        chat.save()
 
-                if(intent == Intent.PLACES):
-                    answer = policy.geographic(entities)
-                elif(intent == Intent.CULTIVARS):
-                    answer = policy.cultivars(entities)
-                elif(intent == Intent.CLIMATOLOGY):
-                    answer = policy.historical_climatology(entities)
-                elif(intent == Intent.FORECAST_PRECIPITATION):
-                    answer = policy.forecast_climate(entities)
-                elif(intent == Intent.FORECAST_YIELD):
-                    answer = policy.forecast_yield(entities)
-                elif(intent == Intent.FORECAST_DATE):
-                    answer = policy.forecast_yield(entities, best_date=True)
+                        intent = Intent(utterance["intent"])
+                        entities = utterance["slots"]
 
-            answers = Generator.print(answer)
-            #answers += ["En estos momentos estoy aprendiendo a responder a tus preguntas, por favor ayúdame a mejorar con esta encuesta: https://demeter.paperform.co/?4ctj8=" + str(chat.pk)]
-            request_body = {"user_id": user_id, "token": melisa.token, "chat_id":chat_id, "text": answers}
-            response = requests.post(melisa.url_post,json=request_body)
-            print("User",user_id,"Message sent")
-            return 'ok'
+                        if(intent == Intent.PLACES):
+                            answer = policy.geographic(entities)
+                        elif(intent == Intent.CULTIVARS):
+                            answer = policy.cultivars(entities)
+                        elif(intent == Intent.CLIMATOLOGY):
+                            answer = policy.historical_climatology(entities)
+                        elif(intent == Intent.FORECAST_PRECIPITATION):
+                            answer = policy.forecast_climate(entities)
+                        elif(intent == Intent.FORECAST_YIELD):
+                            answer = policy.forecast_yield(entities)
+                        elif(intent == Intent.FORECAST_DATE):
+                            answer = policy.forecast_yield(entities, best_date=True)
+
+                answers = Generator.print(answer)
+                request_body = {"user_id": user_id, "token": melisa.token, "message_tags":message_tags, "chat_id":chat_id, "text": answers}
+                response = requests.post(melisa.url_post,json=request_body)
+            return Response("Ok",200)
         else:
-            return "ERROR 2"
+            return Response("Melisa Unauthorized",401)
 
 if __name__ == "__main__":
     # It starts the model for NLU

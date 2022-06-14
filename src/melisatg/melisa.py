@@ -1,5 +1,5 @@
 import re
-from flask import Flask, request
+from flask import Flask, request, Response
 import requests
 import telegram
 
@@ -16,7 +16,7 @@ with open(FILE_TOKEN, "r") as f:
     TOKEN = f.read()
 MELISA_NAME = "telegram"
 TOKEN_DEMETER = ""
-DEMETER_URL = "https://demeter.aclimate.org/api/v1/query"
+DEMETER_URL = "https://demeter.aclimate.org/api/v1/query/"
 
 URL = "https://melisatg.aclimate.org/"
 BOT_USER_NAME = "Melisa_chatbot"
@@ -47,12 +47,13 @@ def respond():
         #text = update.message.text    
         text = re.sub(r"\W", "_", text)
         if text != "/start":
-            url = DEMETER_URL + "?melisa=" + MELISA_NAME + "&token=" + TOKEN_DEMETER + "&user=" + sender_id + "&chat_id=" + ext_id + "&message=" + text
-            requests.get(url, timeout=1)
+            json = {"melisa":MELISA_NAME,"token":TOKEN_DEMETER,"user":sender_id,"chat_id":ext_id,"message":text}
+            r = requests.post(DEMETER_URL, json=json)
+            #url = DEMETER_URL + "?melisa=" + MELISA_NAME + "&token=" + TOKEN_DEMETER + "&user=" + sender_id + "&chat_id=" + ext_id + "&message=" + text
+            #requests.get(url, timeout=1)
+        return Response('ok',200)
     except Exception:
-        return 'ok'
-
-    return 'ok'
+        return Response('Bad request',400)
 
 @app.route("/receptor", methods=['POST'])
 def receptor():
@@ -60,16 +61,16 @@ def receptor():
     token = data['token']
     messages = data['text']
     sender_id = data['user_id']
-    chat_id = data['chat_id']    
+    chat_id = data['chat_id'] if 'chat_id' in data is None else None
     first = True
     if token == TOKEN_DEMETER:
         for m in messages:
-            if first:
+            if first and chat_id is not None:
                 bot.sendMessage(chat_id=sender_id, text=m, reply_to_message_id=chat_id)
                 first = False
             else:
                 bot.sendMessage(chat_id=sender_id, text=m)
-    return 'ok'
+    return Response('ok',200)
 
 
 if __name__ == '__main__':

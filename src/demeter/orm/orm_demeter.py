@@ -8,6 +8,7 @@ class Melisa(Document):
 class User(Document):
     melisa = ReferenceField(Melisa)
     user_id = StringField(required=True)
+    tags = DictField()
 
 class Chat(Document):
     user = ReferenceField(User)
@@ -17,3 +18,4 @@ class Chat(Document):
     intent_name = StringField(max_length=30)
     ext_id = StringField(max_length=200)
     slots = DictField()
+    tags = DictField()
