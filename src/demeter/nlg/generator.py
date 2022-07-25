@@ -8,6 +8,7 @@ class Generator():
     # (NER[]) answers: List of answers
     @staticmethod
     def print(answers):
+        decimals = 0
         msg = []
         if(len(answers) > 0):
             for a in answers:
@@ -39,7 +40,8 @@ class Generator():
                 # Cultivars answers
                 elif (isinstance(a.type, Cultivars)):
                     if(a.type == Cultivars.CROP_MULTIPLE):
-                        msg.append("Los cultivos disponibles son: " + ', '.join(a.values))
+                        #msg.append("Los cultivos disponibles son: " + ', '.join(a.values))
+                        msg.append("Los cultivos disponibles son: " + 'Arroz y Maíz')
                     elif(a.type == Cultivars.CROP_CULTIVAR):
                         msg.append("Las variedades para el cultivo " + a.tag + " disponibles son: " + ', '.join(a.values))
                     else:
@@ -87,9 +89,9 @@ class Generator():
                             for w in cl_ws.itertuples(index=True, name='Pandas') :
                                 m = m + "para el trimestre "
                                 m = m + Generator.get_month(getattr(w, "month")) + "-" + Generator.get_month(getattr(w, "month") + 1) + "-" + Generator.get_month(getattr(w, "month")+2) + ": " 
-                                m = m + "por encima de lo normal = " + str(round(getattr(w, "upper") * 100.0,2)) + "%, "
-                                m = m + "por dentro de lo normal = " + str(round(getattr(w, "normal") * 100.0, 2)) + "%, "
-                                m = m +"por debajo de lo normal = " + str(round(getattr(w, "lower") * 100.0,2)) + "% "
+                                m = m + "por encima de lo normal = " + str(round(getattr(w, "upper") * 100.0,decimals)) + "%, "
+                                m = m + "por dentro de lo normal = " + str(round(getattr(w, "normal") * 100.0,decimals)) + "%, "
+                                m = m +"por debajo de lo normal = " + str(round(getattr(w, "lower") * 100.0,decimals)) + "% "
                                 #msg.append(m)
                             msg.append(m)
                     # yield answers
@@ -110,9 +112,9 @@ class Generator():
                                     m = m + cu + ": "
                                     for ccd in cp_cu_data.itertuples(index=True, name='Pandas'):
                                         m = m + "sembrando en " + str(getattr(ccd, "start"))[:-10] + ", tipo de suelo " + getattr(ccd, "so_name") + " "
-                                        m = m + "puedes obtener en promedio: " + str(round(getattr(ccd, "avg"),2)) + " kg/ha, "
-                                        m = m + "variando entre máx. " + str(round(getattr(ccd, "max"),2)) + " kg/ha "
-                                        m = m + "y mín. " + str(round(getattr(ccd, "min"),2)) + " kg/ha. "
+                                        m = m + "puedes obtener en promedio: " + str(round(getattr(ccd, "avg"),decimals)) + " kg/ha, "
+                                        m = m + "variando entre máx. " + str(round(getattr(ccd, "max"),decimals)) + " kg/ha "
+                                        m = m + "y mín. " + str(round(getattr(ccd, "min"),decimals)) + " kg/ha. "
                                     #msg.append(m)
                                 msg.append(m)
                     # yield answers
@@ -129,7 +131,7 @@ class Generator():
                                 for ccd in cp_ws.itertuples(index=True, name='Pandas'):
                                     m = m + "la variedad " + getattr(ccd, "cu_name") + ", en un suelo " +  getattr(ccd, "so_name") + " "
                                     m = m + "y sembrando en " + str(getattr(ccd, "start"))[:-10] + " "
-                                    m = m + " puedes obtener en promedio: " + str(round(getattr(ccd, "avg"),2)) + " kg/ha. "
+                                    m = m + " puedes obtener en promedio: " + str(round(getattr(ccd, "avg"),decimals)) + " kg/ha. "
                                     #m = m + " variando con máx. de: " + str(round(getattr(ccd, "max"),2)) + " kg/ha"
                                     #m = m + " y un mín. de: " + str(round(getattr(ccd, "min"),2)) + " kg/ha"
                                 msg.append(m)
