@@ -86,9 +86,10 @@ class Generator():
                             cl_ws = a.values.loc[a.values["ws_id"] == ws,:]
                             m = "Para la estación " + cl_ws.iloc[0]["ws_name"] + ", la predicción climática es: "
                             #msg.append(m)
+                            #print(cl_ws.head())
                             for w in cl_ws.itertuples(index=True, name='Pandas') :
                                 m = m + "para el trimestre "
-                                m = m + Generator.get_month(getattr(w, "month")) + "-" + Generator.get_month(getattr(w, "month") + 1) + "-" + Generator.get_month(getattr(w, "month")+2) + ": " 
+                                m = m + Generator.get_month(getattr(w, "month")-1) + "-" + Generator.get_month(getattr(w, "month")) + "-" + Generator.get_month(getattr(w, "month")+1) + ": " 
                                 m = m + "por encima de lo normal = " + str(round(getattr(w, "upper") * 100.0,decimals)) + "%, "
                                 m = m + "por dentro de lo normal = " + str(round(getattr(w, "normal") * 100.0,decimals)) + "%, "
                                 m = m +"por debajo de lo normal = " + str(round(getattr(w, "lower") * 100.0,decimals)) + "% "
@@ -191,4 +192,6 @@ class Generator():
     @staticmethod
     def get_month(id):
         months = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"]
-        return months[int(id)-1]
+        id_month = (int(id)-1) % 12
+        #print(id_month)
+        return months[id_month]
