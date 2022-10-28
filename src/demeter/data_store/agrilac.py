@@ -26,7 +26,7 @@ class AgriLac:
         gauth = GoogleAuth()
         drive = GoogleDrive(gauth)
         # open a google sheet
-        self.gs = gc.open_by_key(self.sheet)
+        self.gs = gc.open_by_key(self.file)
 
     # Method that save information into sheet in google
     # (dataframe) text: Text that should be saved in the document
@@ -36,7 +36,7 @@ class AgriLac:
         answer = "ok"
         try:
             self.sign()
-            self.gs.values_append('Sheet2', {'valueInputOption': 'RAW'}, {'values': df.values.tolist()})
+            self.gs.values_append(self.sheet, {'valueInputOption': 'RAW'}, {'values': df.values.tolist()})
         except Exception as err:
             answer = "error"
             print(f"Unexpected {err=}, {type(err)=}")
