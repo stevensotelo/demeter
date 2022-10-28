@@ -12,11 +12,14 @@ from policy_management.policy_management import PolicyManagement
 from policy_management.ner import NER
 from nlg.generator import Generator
 
+from data_store.agrilac import AgriLac
+
 from conf import config
 
 app = flask.Flask(__name__)
 
 nlu_o = None
+agrilac = None
 
 # Home page
 @app.route('/', methods=['GET'])
@@ -48,13 +51,11 @@ def api_query():
     say_wait = True
     say_hi = True
     # Validate if melisa exists into the database
-    #if not Melisa.objects(name=request.args.get("melisa")):
     if not Melisa.objects(name=melisa_name):
         return Response("Melisa unknown",400)
     else:
         melisa = Melisa.objects.get(name=melisa_name)
         # Validate authentication
-        #if(melisa.token == request.args.get("token")):
         if(melisa.token == melisa_token):
             policy = PolicyManagement(config["ACLIMATE_API"],config["COUNTRIES"])
             user = None
@@ -77,7 +78,6 @@ def api_query():
 
             # message
             message = message.replace("_"," ")
-            print(message)
             if message:
                 # Create chat
                 chat = Chat(user = user, text = message, date = datetime.datetime.now(), ext_id = chat_id, tags=message_tags)
@@ -107,6 +107,16 @@ def api_query():
                     answer.append(NER(Commands.THANKS))
                     chat.intent_id = 9
                     chat.intent_name = "thanks"
+                    chat.slots = {}
+                    chat.save()
+                # It is for agrilac project
+                elif message.lower().startswith("dato preliminar"):
+                    if agrilac.dato_preliminar(message) == "ok":
+                        answer.append(NER(Commands.RECEIVED_OK))
+                    else:
+                        answer.append(NER(Commands.RECEIVED_ERROR))
+                    chat.intent_id = 10
+                    chat.intent_name = "agrilac"
                     chat.slots = {}
                     chat.save()
                 else:
@@ -156,6 +166,10 @@ if __name__ == "__main__":
     # Connect with database
     connect(host=config['CONNECTION_DB'])
     print("Connected DB")
+
+    # Data for google drive agrilac
+    agrilac = AgriLac(config['AGRILAC_KEY'],config['AGRILAC_FILE'],config['AGRILAC_SHEET'])
+    print("Connected to google sheet agrilac")
 
     if config['DEBUG']:
         app.run(threaded=True, port=config['PORT'], debug=config['DEBUG'])

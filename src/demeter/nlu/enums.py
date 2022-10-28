@@ -45,6 +45,8 @@ class Commands(Enum):
     HELP = 2
     BYE = 3
     THANKS = 4
+    RECEIVED_OK = 5
+    RECEIVED_ERROR = 6
 
 class Error(Enum):
     MISSING_ENTITIES = 0

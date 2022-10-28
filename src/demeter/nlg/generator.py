@@ -25,6 +25,10 @@ class Generator():
                         msg.append("Si quieres saber sobre como será el clima para la próxima temporada, podrías intentar algo como: ¿Cuál es el pronóstico climático para Palmira?")
                         msg.append("Si quieres saber sobre como será el rendimiento de algún cultivo, podrías intentar algo como: ¿Cuál es la predicción de rendimiento para maíz en Cerete?")
                         msg.append("Tranquil@, pregunta como quieras, Yo estoy para ayudarte")
+                    elif(a.type == Commands.RECEIVED_OK):
+                        msg.append("Recibido")
+                    elif(a.type == Commands.RECEIVED_ERROR):
+                        msg.append("Error al registrar")
                     else:
                         msg.append("Con mucho gusto")
                 # Geographic answers
